@@ -15,8 +15,9 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "ngx-build-plus:browser",
           "options": {
+            "plugin": "~./ng-ts-register-transformer.js",
             "outputPath": "dist/transpilation-test-three",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -65,8 +66,9 @@
           }
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "ngx-build-plus:dev-server",
           "options": {
+            "plugin": "~./ng-ts-register-transformer.js",
             "browserTarget": "transpilation-test-three:build"
           },
           "configurations": {
@@ -82,7 +84,7 @@
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+          "builder": "ngx-build-plus:karma",
           "options": {
             "main": "src/test.ts",
             "polyfills": "src/polyfills.ts",
@@ -124,6 +126,7 @@
           }
         }
       }
-    }},
+    }
+  },
   "defaultProject": "transpilation-test-three"
 }

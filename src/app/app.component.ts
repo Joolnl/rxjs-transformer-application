@@ -7,4 +7,7 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'transpilation-test-three';
+  constructor() {
+    console.log('TESTSTRING');
+  }
 }
