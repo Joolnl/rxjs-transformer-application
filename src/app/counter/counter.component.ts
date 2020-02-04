@@ -34,6 +34,9 @@ export class CounterComponent implements OnInit {
       merge(substract.pipe(map(evt => -1))),  // map events from substract to -1 and merge with add stream.
       scan((acc, curr) => acc += curr)        // accumulate values.
       ).subscribe(i => this.counter = i);
+
+      throw new Error('test');
+
   }
 
 }
