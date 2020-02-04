@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
-import { wrapFromEvent } from './rxjs_wrapper';
+// import { Expression } from '@angular/compiler';
+// import { wrapFromEvent } from './rxjs_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -40,26 +41,41 @@ const createWrapperExpression = (expression: ts.CallExpression): ts.CallExpressi
   return newExpression;
 };
 
+const createTestWrapperExpression = (expression: ts.CallExpression): ts.CallExpression => {
+  const functionName = ts.createIdentifier('testWrapper');
+  const newExpression = ts.createCall(functionName, undefined, undefined);
+  return newExpression;
+};
+
 // Loops over all nodes, when node matches teststring, replaces the string literal.
 export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationContext) => {
+
   return (rootNode: ts.SourceFile) => {
+
+    const file = rootNode as ts.SourceFile;
+    console.log(file.fileName);
+    const update = ts.updateSourceFileNode(file,
+      [ts.createImportDeclaration(
+          /*decorators*/undefined,
+          /*modifiers*/ undefined,
+        ts.createImportClause(
+          undefined,
+          ts.createNamedImports([ts.createImportSpecifier(ts.createIdentifier('wrapFromEvent'), ts.createIdentifier('wrapFromEvent'))])
+        ),
+        ts.createLiteral('rxjs_wrapper')
+      ), ...file.statements]);
+    ts.visitEachChild(rootNode, visit, context);
+    rootNode = update;
 
     function visit(node: ts.Node): ts.Node {
 
-      if (ts.isCallExpression(node)) {
-        const expression: ts.CallExpression = node;
-        const isRxJsOperator = isRxJSCreationOperator(expression.expression.getText());
-        // console.log(ts.SyntaxKind.CallExpression === node.kind);
-        // console.log(`${expression.expression.getText()} : ${isRxJsOperator}`);
-        // if (isRxJsOperator && expression.expression.getText() === 'fromEvent')
-      }
-
-      return isTestString(node.getText())
-        // ? ts.visitEachChild(createStringLiteral(), visit, context)
-        ? createStringLiteral()
+      return isFromEventExpression(node)
+        ? createWrapperExpression(<ts.CallExpression>node)
         : ts.visitEachChild(node, visit, context);
-      // return ts.visitEachChild(node, visit, context);
     }
+
+
+
     return ts.visitNode(rootNode, visit);
   };
 };

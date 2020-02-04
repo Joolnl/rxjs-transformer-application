@@ -1,5 +1,6 @@
 {
   "compileOnSave": false,
+  "include": ["src/rxjs_wrapper.ts"],
   "compilerOptions": {
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",

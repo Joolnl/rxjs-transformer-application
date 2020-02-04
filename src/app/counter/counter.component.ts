@@ -1,6 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { interval, fromEvent } from 'rxjs';
 import { merge, map, scan } from 'rxjs/operators';
+// import { wrapFromEvent } from '../../../rxjs_wrapper';
+
 
 
 @Component({
@@ -24,6 +26,10 @@ export class CounterComponent implements OnInit {
 
   }
 
+  // wrapFromEvent = () => {
+
+  // };
+
   // Make two streams from both buttons, map add to 1 substract to -1, merge and scan.
   ngAfterViewInit() {
     const add = fromEvent(document.getElementById('addButton'), 'click');
@@ -33,9 +39,7 @@ export class CounterComponent implements OnInit {
       map(evt => 1),                          // map events from add to 1.
       merge(substract.pipe(map(evt => -1))),  // map events from substract to -1 and merge with add stream.
       scan((acc, curr) => acc += curr)        // accumulate values.
-      ).subscribe(i => this.counter = i);
-
-      throw new Error('test');
+    ).subscribe(i => this.counter = i);
 
   }
 
