@@ -12,20 +12,11 @@ var ts = require("typescript");
 // import { wrapFromEvent } from './rxjs_wrapper';
 var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
-var isTestString = function (node) {
-    return node === "'TESTSTRING'";
-};
-var createStringLiteral = function () {
-    // console.log('\ncreating new literal\n');
-    return ts.createStringLiteral('!@#$%#$%');
-};
-// For testing, examine passed in node.
-var examineNode = function (node) {
-    console.log("stringLiteral: " + node.getText() + " " + ts.isStringLiteral(node));
-};
+// Checks if call expression is in rxjsCreationOperators array.
 var isRxJSCreationOperator = function (node) {
     return rxjsCreationOperators.includes(node) ? true : false;
 };
+// Checks if node is fromEvent call expression.
 var isFromEventExpression = function (node) {
     if (ts.isCallExpression(node)) {
         if (node.expression.getText() === 'fromEvent') {
@@ -40,42 +31,51 @@ var createWrapperExpression = function (expression) {
     var newExpression = ts.createCall(functionName, undefined, expression.arguments);
     return newExpression;
 };
-var createTestWrapperExpression = function (expression) {
-    var functionName = ts.createIdentifier('testWrapper');
-    var newExpression = ts.createCall(functionName, undefined, undefined);
-    return newExpression;
+// Add import to given SourceFile.
+// format: import importname as alias from file
+var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
+    return ts.updateSourceFileNode(rootNode, __spreadArrays([ts.createImportDeclaration(
+        /*decorators*/ undefined, 
+        /*modifiers*/ undefined, ts.createImportClause(undefined, ts.createNamedImports([ts.createImportSpecifier(ts.createIdentifier("" + importName), ts.createIdentifier("" + alias))])), ts.createLiteral("" + file))], rootNode.statements));
+};
+// visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T; 
+var wrapVisitNode = function (node, visitor, fromEvent, test, lift) {
+    console.log("\n" + fromEvent + " " + fromEventExpressionFound + " " + node.getSourceFile().fileName);
+    if (test && lift) {
+        return ts.visitNode(node, visitor, test, lift);
+    }
+    else if (test) {
+        return ts.visitNode(node, visitor, test);
+    }
+    else {
+        return ts.visitNode(node, visitor);
+    }
 };
 // Loops over all nodes, when node matches teststring, replaces the string literal.
+// TODO: the fromEventExpressionFound flag is set after the wrapVisitNode is executed.
 exports.dummyTransformer = function (context) {
     return function (rootNode) {
-        var file = rootNode;
-        console.log(file.fileName);
-        var update = ts.updateSourceFileNode(file, __spreadArrays([ts.createImportDeclaration(
-            /*decorators*/ undefined, 
-            /*modifiers*/ undefined, ts.createImportClause(undefined, ts.createNamedImports([ts.createImportSpecifier(ts.createIdentifier('wrapFromEvent'), ts.createIdentifier('wrapFromEvent'))])), ts.createLiteral('rxjs_wrapper'))], file.statements));
-        ts.visitEachChild(rootNode, visit, context);
-        rootNode = update;
         function visit(node) {
-            // if (node.kind === 285) {
-            //   const file = node as ts.SourceFile;
-            //   console.log(file.fileName);
-            //   const update = ts.updateSourceFileNode(file,
-            //     [ts.createImportDeclaration(
-            //     /*decorators*/undefined,
-            //     /*modifiers*/ undefined,
-            //       ts.createImportClause(
-            //         undefined,
-            //         ts.createNamedImports([ts.createImportSpecifier(ts.createIdentifier('wrapFromEvent'), ts.createIdentifier('wrapFromEvent'))])
-            //       ),
-            //       ts.createLiteral('rxjs_wrapper')
-            //     ), ...file.statements]);
-            //     ts.visitEachChild(node, visit, context);
-            //     return update;
-            // }
-            return isFromEventExpression(node)
-                ? createWrapperExpression(node)
-                : ts.visitEachChild(node, visit, context);
+            var fromEventExpressionFound = false;
+            var realVisit = function (node) {
+                if (isFromEventExpression(node)) {
+                    fromEventExpressionFound = true;
+                    console.log('isFromEventExpression', node.getSourceFile().fileName);
+                    // return createWrapperExpression(node as ts.CallExpression);
+                    return ts.visitEachChild(createWrapperExpression(node), realVisit, context);
+                }
+                else {
+                    return ts.visitEachChild(node, realVisit, context);
+                }
+            };
+            var root = realVisit(node);
+            console.log(fromEventExpressionFound);
+            return fromEventExpressionFound
+                ? addNamedImportToSourceFile(root, 'wrapFromEvent', 'wrapFromEvent', 'rxjs_wrapper')
+                : root;
         }
+        // Wrap the rootNode with a wrapFromEvent import statement.
         return ts.visitNode(rootNode, visit);
+        // return wrapVisitNode(rootNode, visit, fromEventExpressionFound);
     };
 };

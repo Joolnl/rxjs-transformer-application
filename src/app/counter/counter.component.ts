@@ -10,25 +10,14 @@ import { merge, map, scan } from 'rxjs/operators';
   templateUrl: './counter.component.html',
   styleUrls: ['./counter.component.sass']
 })
-export class CounterComponent implements OnInit {
+export class CounterComponent {
   protected counter: number = 0;
 
   constructor() {
-    console.log('TESTSTRING');
-    const a = 'TESTSTRING';
-    console.log(a);
-
     const secondsCounter = interval(1000);
     // secondsCounter.subscribe(n => console.log(n));
   }
 
-  ngOnInit() {
-
-  }
-
-  // wrapFromEvent = () => {
-
-  // };
 
   // Make two streams from both buttons, map add to 1 substract to -1, merge and scan.
   ngAfterViewInit() {
