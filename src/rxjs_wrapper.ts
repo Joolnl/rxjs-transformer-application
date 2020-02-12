@@ -32,11 +32,11 @@ export const wrapRange = <T extends Array<any>, U>(...args: T) => {
     return range(...args);
 };
 
-export const wrapOf = <T extends Array<any>, U>(...args: T) => {
-    console.log('wrapOf operator created.');
-    console.log(args);
-    return of(...args);
+export const wrapOf = (metadata, fn) => <T extends Array<any>, U>(...args: T) => {
+    console.log(`wrapOf operator wrapped with metadata ${metadata}`)
+    return fn(...args)
 };
+
 
 // Takes function and arguments, sends metadata en calls given function with arguments.
 export const wrapOfCurry = <T extends Array<any>, U>(meta: string, fn: (...args: T) => U) => (args: T) => {

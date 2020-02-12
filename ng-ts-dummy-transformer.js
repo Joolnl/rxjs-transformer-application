@@ -34,8 +34,24 @@ var createFromEventWrapperExpression = function (expression) {
 };
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
+    // TODO: added complete if clausule for testing.
     if (operator === 'wrapOf') {
-        // const functionName = ts.createIdentifier(operator);
+        var wrapIdentifier = ts.createIdentifier('wrapOf');
+        var metaData = ts.createLiteral('test');
+        var innerIdentifier = ts.createIdentifier('of');
+        var first = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
+        var second = ts.createCall(first, undefined, expression.arguments);
+        return second;
+        // const newExpression = ts.createCall(
+        //   ts.createCall(
+        //     wrapIdentifier,
+        //     undefined,
+        //     [metaData, innerIdentifier]
+        //   ),
+        //   undefined,
+        //   expression.arguments
+        // );
+        // return newExpression;
     }
     var functionName = ts.createIdentifier(operator);
     var newExpression = ts.createCall(functionName, undefined, expression.arguments);
@@ -68,7 +84,7 @@ exports.dummyTransformer = function (context) {
                 }
                 // Mutate found operator to wrapper version.
                 return found
-                    ? ts.visitEachChild(createWrapperExpression(node, operator), realVisit, context)
+                    ? createWrapperExpression(node, operator)
                     : ts.visitEachChild(node, realVisit, context);
             };
             var root = realVisit(node);

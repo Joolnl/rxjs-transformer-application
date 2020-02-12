@@ -31,15 +31,14 @@ exports.wrapRange = function () {
     console.log(args);
     return rxjs_1.range.apply(void 0, args);
 };
-exports.wrapOf = function () {
+exports.wrapOf = function (metadata, fn) { return function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    console.log('wrapOf operator created.');
-    console.log(args);
-    return rxjs_1.of.apply(void 0, args);
-};
+    console.log("wrapOf operator wrapped with metadata " + metadata);
+    return fn.apply(void 0, args);
+}; };
 // Takes function and arguments, sends metadata en calls given function with arguments.
 exports.wrapOfCurry = function (meta, fn) { return function (args) {
     console.log('test');
