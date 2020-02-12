@@ -6,9 +6,9 @@ import { CounterComponent } from './counter/counter.component';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass']
 })
+
 export class AppComponent {
   title = 'transpilation-test-three';
   constructor() {
-    console.log('TESTSTRING');
   }
 }

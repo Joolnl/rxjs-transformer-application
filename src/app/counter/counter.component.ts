@@ -1,7 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { interval, fromEvent } from 'rxjs';
-import { merge, map, scan } from 'rxjs/operators';
-// import { wrapFromEvent } from '../../../rxjs_wrapper';
+import { Component } from '@angular/core';
+import { fromEvent, interval } from 'rxjs';
+import { map, merge, scan } from 'rxjs/operators';
 
 
 
@@ -15,7 +14,7 @@ export class CounterComponent {
 
   constructor() {
     const secondsCounter = interval(1000);
-    // secondsCounter.subscribe(n => console.log(n));
+    const secondsCounter2 = interval(1000);
   }
 
 
@@ -29,7 +28,6 @@ export class CounterComponent {
       merge(substract.pipe(map(evt => -1))),  // map events from substract to -1 and merge with add stream.
       scan((acc, curr) => acc += curr)        // accumulate values.
     ).subscribe(i => this.counter = i);
-
   }
 
 }

@@ -7,24 +7,33 @@ const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defe
 
 
 // Checks if call expression is in rxjsCreationOperators array.
-const isRxJSCreationOperator = (node: string): boolean => {
-  return rxjsCreationOperators.includes(node) ? true : false;
-};
-
-// Checks if node is fromEvent call expression.
-const isFromEventExpression = (node: ts.Node): boolean => {
-  if (ts.isCallExpression(node)) {
-    if (node.expression.getText() === 'fromEvent') {
-      return true;
-    }
+const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
+  if (!ts.isCallExpression(node)) {
+    return [false, null];
   }
 
-  return false;
+  const operator = rxjsCreationOperators
+    .filter(i => i === node.expression.getText())                                 // Filter rxjs creation operator
+    .map(operator => operator.charAt(0).toUpperCase() + operator.substring(1))    // Capitalise first character
+    .map(operator => `wrap${operator}`)                                           // Prepend with 'from'
+    .pop();                                                                       // Return as string.
+
+  return operator !== undefined
+    ? [true, operator]
+    : [false, null];
 };
 
-// Replace given CallExpression with wrapperReplacementExcpression.
-const createWrapperExpression = (expression: ts.CallExpression): ts.CallExpression => {
+
+// Replace given CallExpression with wrapFromEvent callExpression.
+const createFromEventWrapperExpression = (expression: ts.CallExpression): ts.CallExpression => {
   const functionName = ts.createIdentifier('wrapFromEvent');
+  const newExpression = ts.createCall(functionName, undefined, expression.arguments);
+  return newExpression;
+};
+
+// Replace given callExpression with wrapper callExpression.
+const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+  const functionName = ts.createIdentifier(operator);
   const newExpression = ts.createCall(functionName, undefined, expression.arguments);
   return newExpression;
 };
@@ -44,52 +53,42 @@ const addNamedImportToSourceFile = (rootNode: ts.SourceFile, importName: string,
     ), ...rootNode.statements]);
 };
 
-
-// visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T; 
-const wrapVisitNode = <T extends ts.Node>(node: T | undefined, visitor: ts.Visitor | undefined, fromEvent: boolean, test?: (node: ts.Node) => boolean, lift?: (node: ts.NodeArray<ts.Node>) => T) => {
-  console.log(`\n${fromEvent} ${fromEventExpressionFound} ${node.getSourceFile().fileName}`);
-  if (test && lift) {
-    return ts.visitNode(node, visitor, test, lift);
-  } else if (test) {
-    return ts.visitNode(node, visitor, test);
-  } else {
-    return ts.visitNode(node, visitor);
-  }
+// Add array of wrapper functions to given source file node.
+const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: string[]): ts.SourceFile => {
+  const file = 'rxjs_wrapper';
+  operators
+    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file));
+  return rootNode;
 };
 
 
 // Loops over all nodes, when node matches teststring, replaces the string literal.
-// TODO: the fromEventExpressionFound flag is set after the wrapVisitNode is executed.
 export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationContext) => {
 
   return (rootNode: ts.SourceFile) => {
 
-
     function visit(node: ts.Node): ts.Node {
-      let fromEventExpressionFound = false;
+      let operatorsToImport: string[] = [];
+
       const realVisit = (node: ts.Node) => {
-        if (isFromEventExpression(node)) {
-          fromEventExpressionFound = true;
-          console.log('isFromEventExpression', node.getSourceFile().fileName);
-          // return createWrapperExpression(node as ts.CallExpression);
-          return ts.visitEachChild(createWrapperExpression(node as ts.CallExpression), realVisit, context);
-        } else {
-          return ts.visitEachChild(node, realVisit, context);
+
+        const [found, operator] = isRxJSCreationOperator(node);
+
+        // Add found operator to import array once.
+        if (found && !operatorsToImport.includes(operator)) {
+          operatorsToImport.push(operator);
         }
 
+        // Mutate found operator to wrapper version.
+        return found
+          ? ts.visitEachChild(createWrapperExpression(node as ts.CallExpression, operator), realVisit, context)
+          : ts.visitEachChild(node, realVisit, context);
       }
-      const root = realVisit(node);
-      console.log(fromEventExpressionFound);
-      return fromEventExpressionFound
-        ? addNamedImportToSourceFile(root, 'wrapFromEvent', 'wrapFromEvent', 'rxjs_wrapper')
-        : root;
 
+      const root = realVisit(node);
+      return addWrapperFunctionImportArray(root, operatorsToImport);
     }
 
-
-    // Wrap the rootNode with a wrapFromEvent import statement.
-
     return ts.visitNode(rootNode, visit);
-    // return wrapVisitNode(rootNode, visit, fromEventExpressionFound);
   };
 };
