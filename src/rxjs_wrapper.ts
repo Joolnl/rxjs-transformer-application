@@ -36,11 +36,3 @@ export const wrapOf = (metadata, fn) => <T extends Array<any>, U>(...args: T) =>
     console.log(`wrapOf operator wrapped with metadata ${metadata}`)
     return fn(...args)
 };
-
-
-// Takes function and arguments, sends metadata en calls given function with arguments.
-export const wrapOfCurry = <T extends Array<any>, U>(meta: string, fn: (...args: T) => U) => (args: T) => {
-    console.log('test');
-    //TODO: need to compile this file and check if given arguments is correct.
-    return fn(...args);
-};

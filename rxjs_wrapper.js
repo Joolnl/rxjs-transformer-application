@@ -39,9 +39,3 @@ exports.wrapOf = function (metadata, fn) { return function () {
     console.log("wrapOf operator wrapped with metadata " + metadata);
     return fn.apply(void 0, args);
 }; };
-// Takes function and arguments, sends metadata en calls given function with arguments.
-exports.wrapOfCurry = function (meta, fn) { return function (args) {
-    console.log('test');
-    //TODO: need to compile this file and check if given arguments is correct.
-    return fn.apply(void 0, args);
-}; };
