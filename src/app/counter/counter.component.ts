@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { fromEvent, interval } from 'rxjs';
+import { fromEvent, interval, range, of } from 'rxjs';
 import { map, merge, scan } from 'rxjs/operators';
 
 
@@ -15,6 +15,10 @@ export class CounterComponent {
   constructor() {
     const secondsCounter = interval(1000);
     const secondsCounter2 = interval(1000);
+    const test = range(1, 10);
+    const test2 = of(1);
+    test.subscribe(i => console.log(i));
+    test2.subscribe(i => console.log(i));
   }
 
 

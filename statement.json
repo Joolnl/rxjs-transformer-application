@@ -1,0 +1,44 @@
+{
+    "type": "ExpressionStatement",
+    "start": 2,
+    "end": 37,
+    "expression": {
+        "type": "CallExpression",
+        "start": 2,
+        "end": 37,
+        "callee": {
+            "type": "CallExpression",
+            "start": 2,
+            "end": 33,
+            "callee": {
+                "type": "Identifier",
+                "start": 2,
+                "end": 21,
+                "name": "wrapFuncAndPassMeta"
+            },
+            "arguments": [
+                {
+                    "type": "Literal",
+                    "start": 22,
+                    "end": 28,
+                    "value": "meta",
+                    "raw": "'meta'"
+                },
+                {
+                    "type": "Identifier",
+                    "start": 30,
+                    "end": 32,
+                    "name": "fn"
+                }
+            ]
+        },
+        "arguments": [
+            {
+                "type": "ArrayExpression",
+                "start": 34,
+                "end": 36,
+                "elements": []
+            }
+        ]
+    }
+}

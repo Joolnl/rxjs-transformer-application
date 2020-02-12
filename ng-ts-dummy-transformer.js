@@ -34,6 +34,9 @@ var createFromEventWrapperExpression = function (expression) {
 };
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
+    if (operator === 'wrapOf') {
+        // const functionName = ts.createIdentifier(operator);
+    }
     var functionName = ts.createIdentifier(operator);
     var newExpression = ts.createCall(functionName, undefined, expression.arguments);
     return newExpression;

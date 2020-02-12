@@ -33,6 +33,9 @@ const createFromEventWrapperExpression = (expression: ts.CallExpression): ts.Cal
 
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+  if (operator === 'wrapOf') {
+    // const functionName = ts.createIdentifier(operator);
+  }
   const functionName = ts.createIdentifier(operator);
   const newExpression = ts.createCall(functionName, undefined, expression.arguments);
   return newExpression;
@@ -73,6 +76,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       const realVisit = (node: ts.Node) => {
 
         const [found, operator] = isRxJSCreationOperator(node);
+
 
         // Add found operator to import array once.
         if (found && !operatorsToImport.includes(operator)) {
