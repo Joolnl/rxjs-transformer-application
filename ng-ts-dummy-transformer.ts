@@ -24,10 +24,12 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
   const file = expression.getSourceFile().fileName;
 
-  const wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
   const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
   const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-  const metaData = ts.createObjectLiteral([fileProperty, lineProperty]);
+  const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
+  const metaData = ts.createObjectLiteral([fileProperty, lineProperty, operatorProperty]);
+
+  const wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
   const innerIdentifier = ts.createIdentifier(operator);
 
   const curriedCall = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);

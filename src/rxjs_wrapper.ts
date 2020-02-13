@@ -5,6 +5,7 @@ import { SchedulerLike, asyncScheduler as async, interval, of, range } from 'rxj
 interface Metadata {
     file: string;
     line: number;
+    operator: string;
 }
 
 const sendToBackpage = (operator, line, file) => {
@@ -16,6 +17,6 @@ const sendToBackpage = (operator, line, file) => {
 };
 
 export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
-    console.log(`wrap operator wrapped with metadata ${metadata.file} ${metadata.line}`)
+    console.log(`${metadata.operator} at ${metadata.line} in ${metadata.file}`);
     return fn(...args);
 };
