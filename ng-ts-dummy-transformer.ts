@@ -53,14 +53,22 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   return completeCall;
 };
 
+// Inject pip with a tap operation: tap(x => console.log(x))
 const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
+  const parameter = ts.createParameter(
+    undefined,
+    undefined,
+    undefined,
+    ts.createIdentifier('x')
+  );
+  const consoleLog = ts.createPropertyAccess(ts.createIdentifier('console'), ts.createIdentifier('log'));
   const lambda = ts.createArrowFunction(
     undefined,
     undefined,
-    undefined,  //parameter
+    [parameter],
     undefined,
     undefined,
-    ts.createCall(ts.createIdentifier('alert'), undefined, [ts.createLiteral('hello world')])
+    ts.createCall(consoleLog, undefined, [ts.createIdentifier('x')])
   );
 
   const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
