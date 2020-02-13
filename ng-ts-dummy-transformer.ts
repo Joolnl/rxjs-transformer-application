@@ -19,14 +19,6 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
     : [false, null];
 };
 
-
-// Replace given CallExpression with wrapFromEvent callExpression.
-const createFromEventWrapperExpression = (expression: ts.CallExpression): ts.CallExpression => {
-  const functionName = ts.createIdentifier('wrapFromEvent');
-  const newExpression = ts.createCall(functionName, undefined, expression.arguments);
-  return newExpression;
-};
-
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
   const wrapIdentifier = ts.createIdentifier('wrapCreationOperator');

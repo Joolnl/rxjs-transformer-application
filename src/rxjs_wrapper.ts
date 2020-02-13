@@ -10,28 +10,6 @@ const sendToBackpage = (operator, line, file) => {
     //     });
 };
 
-export const wrapFromEvent = <T>(target: FromEventTarget<T>, eventName: string,
-    options?: EventListenerOptions, resultSelector?: (...args: any[]) => T) => {
-    console.log('fromEvent subscription created.');
-    sendToBackpage('fromEvent', 0, 0);
-
-    return fromEvent(target, eventName, options, resultSelector);
-};
-
-
-export const wrapInterval = (period: number = 0, scheduler: SchedulerLike = async) => {
-    console.log('interval subscription created.');
-    sendToBackpage('interval', 1, 0);
-
-    return interval(period, scheduler);
-};
-
-export const wrapRange = <T extends Array<any>, U>(...args: T) => {
-    console.log('wrapRange operator created.');
-    console.log(args);
-    return range(...args);
-};
-
 export const wrapCreationOperator = (metadata, fn) => <T extends Array<any>, U>(...args: T) => {
     console.log(`wrap operator wrapped with metadata ${metadata}`)
     return fn(...args)
