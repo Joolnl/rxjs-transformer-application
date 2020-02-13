@@ -49,22 +49,21 @@ var addWrapperFunctionImportArray = function (rootNode, operators) {
 // Loops over all nodes, when node matches teststring, replaces the string literal.
 exports.dummyTransformer = function (context) {
     return function (rootNode) {
+        var foundRxJSCreationOperator = false;
         function visit(node) {
-            var operatorsToImport = [];
             var realVisit = function (node) {
                 var _a = isRxJSCreationOperator(node), found = _a[0], operator = _a[1];
-                // Add found operator to import array once.
-                if (found && !operatorsToImport.includes("wrap" + (operator.charAt(0).toUpperCase() + operator.substring(1)))) {
-                    operatorsToImport.push("wrap" + (operator.charAt(0).toUpperCase() + operator.substring(1)));
-                }
+                found && (foundRxJSCreationOperator = true);
                 // Mutate found operator to wrapper version.
                 return found
                     ? createWrapperExpression(node, operator)
                     : ts.visitEachChild(node, realVisit, context);
             };
-            // TODO: wrapCreationOperator now imported in every file.
+            // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
-            return addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper');
+            return foundRxJSCreationOperator
+                ? addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper')
+                : root;
         }
         return ts.visitNode(rootNode, visit);
     };

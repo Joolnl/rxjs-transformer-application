@@ -60,19 +60,12 @@ const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: strin
 export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationContext) => {
 
   return (rootNode: ts.SourceFile) => {
+    let foundRxJSCreationOperator = false;
 
     function visit(node: ts.Node): ts.Node {
-      let operatorsToImport: string[] = [];
-
       const realVisit = (node: ts.Node) => {
-
         const [found, operator] = isRxJSCreationOperator(node);
-
-
-        // Add found operator to import array once.
-        if (found && !operatorsToImport.includes(`wrap${operator.charAt(0).toUpperCase() + operator.substring(1)}`)) {
-          operatorsToImport.push(`wrap${operator.charAt(0).toUpperCase() + operator.substring(1)}`);
-        }
+        found && (foundRxJSCreationOperator = true);
 
         // Mutate found operator to wrapper version.
         return found
@@ -80,9 +73,11 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
           : ts.visitEachChild(node, realVisit, context);
       }
 
-      // TODO: wrapCreationOperator now imported in every file.
+      // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node);
-      return addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper');
+      return foundRxJSCreationOperator
+        ? addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper')
+        : root;
     }
 
     return ts.visitNode(rootNode, visit);
