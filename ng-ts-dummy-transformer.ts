@@ -1,6 +1,4 @@
 import * as ts from 'typescript';
-// import { Expression } from '@angular/compiler';
-// import { wrapFromEvent } from './rxjs_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -14,8 +12,6 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
 
   const operator = rxjsCreationOperators
     .filter(i => i === node.expression.getText())                                 // Filter rxjs creation operator
-    .map(operator => operator.charAt(0).toUpperCase() + operator.substring(1))    // Capitalise first character
-    .map(operator => `wrap${operator}`)                                           // Prepend with 'from'
     .pop();                                                                       // Return as string.
 
   return operator !== undefined
@@ -33,30 +29,15 @@ const createFromEventWrapperExpression = (expression: ts.CallExpression): ts.Cal
 
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
-  // TODO: added complete if clausule for testing.
-  if (operator === 'wrapOf') {
-    const wrapIdentifier = ts.createIdentifier('wrapOf');
-    const metaData = ts.createLiteral('test');
-    const innerIdentifier = ts.createIdentifier('of');
+  const wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
+  const metaData = ts.createLiteral('test');
+  const innerIdentifier = ts.createIdentifier(operator);
 
-    const first = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
-    const second = ts.createCall(first, undefined, expression.arguments);
+  // TODO: can be cleaner.
+  const first = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
+  const second = ts.createCall(first, undefined, expression.arguments);
 
-    return second;
-    // const newExpression = ts.createCall(
-    //   ts.createCall(
-    //     wrapIdentifier,
-    //     undefined,
-    //     [metaData, innerIdentifier]
-    //   ),
-    //   undefined,
-    //   expression.arguments
-    // );
-    // return newExpression;
-  }
-  const functionName = ts.createIdentifier(operator);
-  const newExpression = ts.createCall(functionName, undefined, expression.arguments);
-  return newExpression;
+  return second;
 };
 
 // Add import to given SourceFile.
@@ -97,8 +78,8 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
 
 
         // Add found operator to import array once.
-        if (found && !operatorsToImport.includes(operator)) {
-          operatorsToImport.push(operator);
+        if (found && !operatorsToImport.includes(`wrap${operator.charAt(0).toUpperCase() + operator.substring(1)}`)) {
+          operatorsToImport.push(`wrap${operator.charAt(0).toUpperCase() + operator.substring(1)}`);
         }
 
         // Mutate found operator to wrapper version.
@@ -107,8 +88,9 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
           : ts.visitEachChild(node, realVisit, context);
       }
 
+      // TODO: wrapCreationOperator now imported in every file.
       const root = realVisit(node);
-      return addWrapperFunctionImportArray(root, operatorsToImport);
+      return addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper');
     }
 
     return ts.visitNode(rootNode, visit);

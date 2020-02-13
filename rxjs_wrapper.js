@@ -31,11 +31,11 @@ exports.wrapRange = function () {
     console.log(args);
     return rxjs_1.range.apply(void 0, args);
 };
-exports.wrapOf = function (metadata, fn) { return function () {
+exports.wrapCreationOperator = function (metadata, fn) { return function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    console.log("wrapOf operator wrapped with metadata " + metadata);
+    console.log("wrap operator wrapped with metadata " + metadata);
     return fn.apply(void 0, args);
 }; };

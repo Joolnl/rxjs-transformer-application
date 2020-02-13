@@ -32,7 +32,7 @@ export const wrapRange = <T extends Array<any>, U>(...args: T) => {
     return range(...args);
 };
 
-export const wrapOf = (metadata, fn) => <T extends Array<any>, U>(...args: T) => {
-    console.log(`wrapOf operator wrapped with metadata ${metadata}`)
+export const wrapCreationOperator = (metadata, fn) => <T extends Array<any>, U>(...args: T) => {
+    console.log(`wrap operator wrapped with metadata ${metadata}`)
     return fn(...args)
 };
