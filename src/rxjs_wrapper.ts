@@ -2,6 +2,11 @@ import { FromEventTarget, fromEvent } from 'rxjs/internal/observable/fromEvent';
 import { SchedulerLike, asyncScheduler as async, interval, of, range } from 'rxjs';
 // import "chrome";
 
+interface Metadata {
+    file: string;
+    line: number;
+}
+
 const sendToBackpage = (operator, line, file) => {
     const subscription = { operator, line, file };
     // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: subscription },
@@ -10,7 +15,7 @@ const sendToBackpage = (operator, line, file) => {
     //     });
 };
 
-export const wrapCreationOperator = (metadata, fn) => <T extends Array<any>, U>(...args: T) => {
-    console.log(`wrap operator wrapped with metadata ${metadata}`)
-    return fn(...args)
+export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
+    console.log(`wrap operator wrapped with metadata ${metadata.file} ${metadata.line}`)
+    return fn(...args);
 };

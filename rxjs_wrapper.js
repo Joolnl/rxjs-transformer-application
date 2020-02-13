@@ -1,6 +1,5 @@
 "use strict";
 exports.__esModule = true;
-// import "chrome";
 var sendToBackpage = function (operator, line, file) {
     var subscription = { operator: operator, line: line, file: file };
     // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: subscription },
@@ -13,6 +12,6 @@ exports.wrapCreationOperator = function (metadata, fn) { return function () {
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    console.log("wrap operator wrapped with metadata " + metadata);
+    console.log("wrap operator wrapped with metadata " + metadata.file + " " + metadata.line);
     return fn.apply(void 0, args);
 }; };

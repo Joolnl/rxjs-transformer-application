@@ -25,12 +25,13 @@ var isRxJSCreationOperator = function (node) {
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
     var wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
-    var metaData = ts.createLiteral('test');
+    var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral('app_component.ts'));
+    var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral('1'));
+    var metaData = ts.createObjectLiteral([fileProperty, lineProperty]);
     var innerIdentifier = ts.createIdentifier(operator);
-    // TODO: can be cleaner.
-    var first = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
-    var second = ts.createCall(first, undefined, expression.arguments);
-    return second;
+    var curriedCall = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
+    var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+    return completeCall;
 };
 // Add import to given SourceFile.
 // format: import importname as alias from file
