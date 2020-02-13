@@ -16,6 +16,7 @@ export class CounterComponent {
     const secondsCounter = interval(1000);
     const secondsCounter2 = interval(1000);
     const test = range(1, 10);
+    const b = range(1, 12);
     const test2 = of(1);
     test.subscribe(i => console.log(i));
     test2.subscribe(i => console.log(`called ${i}`));
