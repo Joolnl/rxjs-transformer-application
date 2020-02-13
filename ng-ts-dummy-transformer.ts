@@ -19,6 +19,21 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
     : [false, null];
 };
 
+// Determine if callExpression is pipe operator.
+const isPipeOperator = (node: ts.Node): boolean => {
+  if (!ts.isCallExpression(node)) {
+    return false;
+  }
+
+  const result = node.getChildren()
+    .filter(node => ts.isPropertyAccessExpression(node))
+    .filter((node: ts.PropertyAccessExpression) => node.name.getText() === 'pipe');
+  
+  // result.length && node.arguments.map(argument => console.log(argument.getText()));
+
+  return result.length ? true : false;
+}
+
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
   const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
@@ -36,6 +51,22 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
 
   return completeCall;
+};
+
+const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
+  const lambda = ts.createArrowFunction(
+    undefined,
+    undefined,
+    undefined,  //parameter
+    undefined,
+    undefined,
+    ts.createCall(ts.createIdentifier('alert'), undefined, [ts.createLiteral('hello world')])
+  );
+
+  const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
+  const newArguments = ts.createNodeArray([tapExpression, ...node.arguments])
+  const newExpression = {...node, arguments: newArguments};
+  return newExpression;
 };
 
 // Add import to given SourceFile.
@@ -70,13 +101,20 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
 
     function visit(node: ts.Node): ts.Node {
       const realVisit = (node: ts.Node) => {
-        const [found, operator] = isRxJSCreationOperator(node);
-        found && (foundRxJSCreationOperator = true);
 
-        // Mutate found operator to wrapper version.
-        return found
-          ? createWrapperExpression(node as ts.CallExpression, operator)
-          : ts.visitEachChild(node, realVisit, context);
+        // if creation operator, wrap it.
+        const [isCreationOperator, operator] = isRxJSCreationOperator(node);
+        if (isCreationOperator) {
+          foundRxJSCreationOperator = true;
+          return createWrapperExpression(node as ts.CallExpression, operator);
+        }
+
+        // if pipe operator, inject it.
+        if (isPipeOperator(node)) {
+          return createInjectedPipeExpression(node as ts.CallExpression);
+        }
+
+        return ts.visitEachChild(node, realVisit, context);
       }
 
       // Add required imports to sourceFile after visitor pattern.

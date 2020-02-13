@@ -18,9 +18,7 @@ const sendToBackpage = (operator, line, file) => {
 };
 
 export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
-    console.log(`${metadata.operator} at ${metadata.line} in ${metadata.file}`);
     sendToBackpage(metadata.operator, metadata.line, metadata.file);
-    console.log(chrome);
 
     return fn(...args);
 };

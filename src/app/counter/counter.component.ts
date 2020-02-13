@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { fromEvent, interval, range, of } from 'rxjs';
-import { map, merge, scan } from 'rxjs/operators';
+import { map, merge, scan, tap } from 'rxjs/operators';
 
 
 
@@ -29,6 +29,7 @@ export class CounterComponent {
     const substract = fromEvent(document.getElementById('minusButton'), 'click');
 
     add.pipe(
+      tap(() => console.log('test')),
       map(evt => 1),                          // map events from add to 1.
       merge(substract.pipe(map(evt => -1))),  // map events from substract to -1 and merge with add stream.
       scan((acc, curr) => acc += curr)        // accumulate values.
