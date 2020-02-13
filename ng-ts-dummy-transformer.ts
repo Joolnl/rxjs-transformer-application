@@ -21,9 +21,12 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
 
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+  const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
+  const file = expression.getSourceFile().fileName;
+
   const wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
-  const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral('app_component.ts'));
-  const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral('1'));
+  const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+  const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
   const metaData = ts.createObjectLiteral([fileProperty, lineProperty]);
   const innerIdentifier = ts.createIdentifier(operator);
 

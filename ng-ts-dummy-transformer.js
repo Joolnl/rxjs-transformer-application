@@ -24,9 +24,11 @@ var isRxJSCreationOperator = function (node) {
 };
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
+    var line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
+    var file = expression.getSourceFile().fileName;
     var wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
-    var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral('app_component.ts'));
-    var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral('1'));
+    var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+    var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
     var metaData = ts.createObjectLiteral([fileProperty, lineProperty]);
     var innerIdentifier = ts.createIdentifier(operator);
     var curriedCall = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
