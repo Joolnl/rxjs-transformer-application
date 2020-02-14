@@ -41,7 +41,6 @@ var isPipeOperator = function (node) {
     var result = node.getChildren()
         .filter(function (node) { return ts.isPropertyAccessExpression(node); })
         .filter(function (node) { return node.name.getText() === 'pipe'; });
-    // result.length && node.arguments.map(argument => console.log(argument.getText()));
     return result.length ? true : false;
 };
 // Replace given callExpression with wrapper callExpression.
@@ -58,13 +57,23 @@ var createWrapperExpression = function (expression, operator) {
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
     return completeCall;
 };
+// Inject new argument for every given argument.
+var injectArguments = function (args, newArg) {
+    var newArgs = [];
+    args.forEach(function (el) {
+        newArgs.push(el);
+        newArgs.push(newArg);
+    });
+    return ts.createNodeArray(newArgs);
+};
 // Inject pip with a tap operation: tap(x => console.log(x))
 var createInjectedPipeExpression = function (node) {
     var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
     var consoleLog = ts.createPropertyAccess(ts.createIdentifier('console'), ts.createIdentifier('log'));
     var lambda = ts.createArrowFunction(undefined, undefined, [parameter], undefined, undefined, ts.createCall(consoleLog, undefined, [ts.createIdentifier('x')]));
     var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-    var newArguments = ts.createNodeArray(__spreadArrays([tapExpression], node.arguments));
+    // const newArguments = ts.createNodeArray([tapExpression, ...node.arguments, tapExpression]);
+    var newArguments = injectArguments(node.arguments, tapExpression);
     var newExpression = __assign(__assign({}, node), { arguments: newArguments });
     return newExpression;
 };
@@ -97,6 +106,7 @@ exports.dummyTransformer = function (context) {
                 // if pipe operator, inject it.
                 if (isPipeOperator(node)) {
                     return createInjectedPipeExpression(node);
+                    // return ts.visitEachChild(createInjectedPipeExpression(node as ts.CallExpression), realVisit, context);
                 }
                 return ts.visitEachChild(node, realVisit, context);
             };

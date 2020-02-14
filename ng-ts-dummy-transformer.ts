@@ -28,8 +28,6 @@ const isPipeOperator = (node: ts.Node): boolean => {
   const result = node.getChildren()
     .filter(node => ts.isPropertyAccessExpression(node))
     .filter((node: ts.PropertyAccessExpression) => node.name.getText() === 'pipe');
-  
-  // result.length && node.arguments.map(argument => console.log(argument.getText()));
 
   return result.length ? true : false;
 }
@@ -53,6 +51,17 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   return completeCall;
 };
 
+// Inject new argument for every given argument.
+const injectArguments = (args: ts.NodeArray<ts.Expression>, newArg: ts.Expression): ts.NodeArray<ts.Expression> => {
+  const newArgs: ts.Expression[] = [];
+  args.forEach((el) => {
+    newArgs.push(el);
+    newArgs.push(newArg);
+  });
+
+  return ts.createNodeArray(newArgs);
+};
+
 // Inject pip with a tap operation: tap(x => console.log(x))
 const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
   const parameter = ts.createParameter(
@@ -72,7 +81,8 @@ const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpressio
   );
 
   const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-  const newArguments = ts.createNodeArray([tapExpression, ...node.arguments])
+  // const newArguments = ts.createNodeArray([tapExpression, ...node.arguments, tapExpression]);
+  const newArguments = injectArguments(node.arguments, tapExpression);
   const newExpression = {...node, arguments: newArguments};
   return newExpression;
 };
@@ -120,6 +130,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
         // if pipe operator, inject it.
         if (isPipeOperator(node)) {
           return createInjectedPipeExpression(node as ts.CallExpression);
+          // return ts.visitEachChild(createInjectedPipeExpression(node as ts.CallExpression), realVisit, context);
         }
 
         return ts.visitEachChild(node, realVisit, context);
