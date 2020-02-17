@@ -31,8 +31,8 @@ exports.wrapCreationOperator = function (metadata, fn) { return function () {
     return fn.apply(void 0, args);
 }; };
 // Send event data to backpage.
-exports.sendEventToBackpage = function (metadata, event) {
-    console.log(metadata.operator);
+exports.sendEventToBackpage = function (metadata, operator, event) {
+    console.log(event + " after " + operator);
     // const message = createMessage(MessageType.EventPassage, metadata, event);
     // sendToBackpage(message);
 };

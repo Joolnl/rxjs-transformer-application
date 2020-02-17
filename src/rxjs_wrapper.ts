@@ -9,7 +9,7 @@ interface Message {
     event?: any
 }
 
-interface Metadata {
+export interface Metadata {
     file: string;
     line: number;
     operator: string;
@@ -48,8 +48,8 @@ export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata
 };
 
 // Send event data to backpage.
-export const sendEventToBackpage = (metadata: Metadata, event: any): void => {
-    console.log(metadata.operator);
+export const sendEventToBackpage = (metadata: Metadata, operator: string, event: any): void => {
+    console.log(`${event} after ${operator}`);
     // const message = createMessage(MessageType.EventPassage, metadata, event);
     // sendToBackpage(message);
 };

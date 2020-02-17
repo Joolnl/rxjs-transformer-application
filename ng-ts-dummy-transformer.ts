@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { Metadata } from './src/rxjs_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -57,13 +58,30 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   return completeCall;
 };
 
-// TODO: use flatmap
+// Creates: tap(x => sendEventToBackpage(metadata, x))
+const createTapsendEventToBackpageExpression = (metadata, event: ts.ParameterDeclaration) => (operator: string): ts.Expression => {
+  const sendEvent = ts.createIdentifier('sendEventToBackpage');
+  const lambda = ts.createArrowFunction(
+    undefined,
+    undefined,
+    [event],
+    undefined,
+    undefined,
+    ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x')])
+  );
+
+  const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
+
+  return tapExpression;
+};
+
 // Inject new argument for every given argument.
-const injectArguments = (args: ts.NodeArray<ts.Expression>, newArg: ts.Expression): ts.NodeArray<ts.Expression> => {
+const injectArguments = (args: ts.NodeArray<ts.Expression>, tapExpr: (operator: string) => ts.Expression): ts.NodeArray<ts.Expression> => {
   const newArgs: ts.Expression[] = [];
+  newArgs.push(tapExpr('initial'));
   args.forEach((el) => {
     newArgs.push(el);
-    newArgs.push(newArg);
+    newArgs.push(tapExpr(el.getText()));
   });
 
   return ts.createNodeArray(newArgs);
@@ -79,21 +97,11 @@ const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpressio
   );
   const operator = node.getText();
   const metadata = createMetaData(node, operator);
-  const sendEvent = ts.createIdentifier('sendEventToBackpage');
+  const tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter);
 
-  const lambda = ts.createArrowFunction(
-    undefined,
-    undefined,
-    [parameter],
-    undefined,
-    undefined,
-    ts.createCall(sendEvent, undefined, [metadata, ts.createIdentifier('x')])
-  );
+  const newArguments = injectArguments(node.arguments, tapExpressionCreator);
+  const newExpression = { ...node, arguments: newArguments };
 
-  const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-  // const newArguments = ts.createNodeArray([tapExpression, ...node.arguments, tapExpression]);
-  const newArguments = injectArguments(node.arguments, tapExpression);
-  const newExpression = {...node, arguments: newArguments};
   return newExpression;
 };
 

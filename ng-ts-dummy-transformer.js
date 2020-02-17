@@ -62,13 +62,20 @@ var createWrapperExpression = function (expression, operator) {
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
     return completeCall;
 };
-// TODO: use flatmap
+// Creates: tap(x => sendEventToBackpage(metadata, x))
+var createTapsendEventToBackpageExpression = function (metadata, event) { return function (operator) {
+    var sendEvent = ts.createIdentifier('sendEventToBackpage');
+    var lambda = ts.createArrowFunction(undefined, undefined, [event], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x')]));
+    var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
+    return tapExpression;
+}; };
 // Inject new argument for every given argument.
-var injectArguments = function (args, newArg) {
+var injectArguments = function (args, tapExpr) {
     var newArgs = [];
+    newArgs.push(tapExpr('initial'));
     args.forEach(function (el) {
         newArgs.push(el);
-        newArgs.push(newArg);
+        newArgs.push(tapExpr(el.getText()));
     });
     return ts.createNodeArray(newArgs);
 };
@@ -77,11 +84,8 @@ var createInjectedPipeExpression = function (node) {
     var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
     var operator = node.getText();
     var metadata = createMetaData(node, operator);
-    var sendEvent = ts.createIdentifier('sendEventToBackpage');
-    var lambda = ts.createArrowFunction(undefined, undefined, [parameter], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createIdentifier('x')]));
-    var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-    // const newArguments = ts.createNodeArray([tapExpression, ...node.arguments, tapExpression]);
-    var newArguments = injectArguments(node.arguments, tapExpression);
+    var tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter);
+    var newArguments = injectArguments(node.arguments, tapExpressionCreator);
     var newExpression = __assign(__assign({}, node), { arguments: newArguments });
     return newExpression;
 };
