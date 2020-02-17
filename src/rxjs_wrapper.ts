@@ -19,14 +19,6 @@ enum MessageType {
     EventPassage = 'EventPassage'
 }
 
-const sendToBackpageDeprecated = (operator, line, file) => {
-    const subscription = { operator, line, file };
-    chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: subscription },
-        function (response) {
-            // ...
-        });
-};
-
 // Send given message to the backpage.
 const sendToBackpage = (message: Message): void => {
     console.log(message);
@@ -43,7 +35,6 @@ const createMessage = (messageType: MessageType, metadata: Metadata, event?: any
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
-    // sendToBackpageDeprecated(metadata.operator, metadata.line, metadata.file);
     const message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
     return fn(...args);

@@ -5,12 +5,6 @@ var MessageType;
     MessageType["SubscriptionCreation"] = "SubscriptionCreation";
     MessageType["EventPassage"] = "EventPassage";
 })(MessageType || (MessageType = {}));
-var sendToBackpageDeprecated = function (operator, line, file) {
-    var subscription = { operator: operator, line: line, file: file };
-    chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: subscription }, function (response) {
-        // ...
-    });
-};
 // Send given message to the backpage.
 var sendToBackpage = function (message) {
     console.log(message);
@@ -28,7 +22,6 @@ exports.wrapCreationOperator = function (metadata, fn) { return function () {
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    // sendToBackpageDeprecated(metadata.operator, metadata.line, metadata.file);
     var message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
     return fn.apply(void 0, args);
