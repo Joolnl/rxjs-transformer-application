@@ -7,7 +7,6 @@ var MessageType;
 })(MessageType || (MessageType = {}));
 // Send given message to the backpage.
 var sendToBackpage = function (message) {
-    console.log(message);
     chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message }, function (response) {
         // ...
     });
@@ -29,6 +28,6 @@ exports.wrapCreationOperator = function (metadata, fn) { return function () {
 // Send event data to backpage.
 exports.sendEventToBackpage = function (metadata, operator, event) {
     console.log(event + " after " + operator);
-    // const message = createMessage(MessageType.EventPassage, metadata, event);
-    // sendToBackpage(message);
+    var message = createMessage(MessageType.EventPassage, metadata, event);
+    sendToBackpage(message);
 };

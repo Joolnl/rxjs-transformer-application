@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import { Metadata } from './src/rxjs_wrapper';
+import v5 = require('uuid/v5');
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -33,15 +34,23 @@ const isPipeOperator = (node: ts.Node): boolean => {
   return result.length ? true : false;
 }
 
+// Generate unique id for filename and line.
+const generateId = (filename: string, line: number): string => {
+  const uuid = v5(`${filename}${line}`, 'e01462c8-517f-11ea-8d77-2e728ce88125');
+  return uuid;
+};
+
 // Create metadata object from expression and operator.
 const createMetaData = (expression: ts.CallExpression, operator: string) => {
   const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
   const file = expression.getSourceFile().fileName;
+  const uuid = generateId(file, line)
 
+  const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
   const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
   const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
   const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-  const metaData = ts.createObjectLiteral([fileProperty, lineProperty, operatorProperty]);
+  const metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
 
   return metaData;
 };

@@ -19,6 +19,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
+var v5 = require("uuid/v5");
 var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 // Checks if call expression is in rxjsCreationOperators array.
@@ -43,14 +44,21 @@ var isPipeOperator = function (node) {
         .filter(function (node) { return node.name.getText() === 'pipe'; });
     return result.length ? true : false;
 };
+// Generate unique id for filename and line.
+var generateId = function (filename, line) {
+    var uuid = v5("" + filename + line, 'e01462c8-517f-11ea-8d77-2e728ce88125');
+    return uuid;
+};
 // Create metadata object from expression and operator.
 var createMetaData = function (expression, operator) {
     var line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
     var file = expression.getSourceFile().fileName;
+    var uuid = generateId(file, line);
+    var uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
     var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
     var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
     var operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-    var metaData = ts.createObjectLiteral([fileProperty, lineProperty, operatorProperty]);
+    var metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
     return metaData;
 };
 // Replace given callExpression with wrapper callExpression.

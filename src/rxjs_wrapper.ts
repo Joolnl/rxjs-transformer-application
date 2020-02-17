@@ -9,6 +9,7 @@ interface Message {
 }
 
 export interface Metadata {
+    uuid: string,
     file: string;
     line: number;
     operator: string;
@@ -21,7 +22,6 @@ enum MessageType {
 
 // Send given message to the backpage.
 const sendToBackpage = (message: Message): void => {
-    console.log(message);
     chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
         function (response) {
             // ...
@@ -43,6 +43,6 @@ export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata
 // Send event data to backpage.
 export const sendEventToBackpage = (metadata: Metadata, operator: string, event: any): void => {
     console.log(`${event} after ${operator}`);
-    // const message = createMessage(MessageType.EventPassage, metadata, event);
-    // sendToBackpage(message);
+    const message = createMessage(MessageType.EventPassage, metadata, event);
+    sendToBackpage(message);
 };
