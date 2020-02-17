@@ -32,8 +32,8 @@ const isPipeOperator = (node: ts.Node): boolean => {
   return result.length ? true : false;
 }
 
-// Replace given callExpression with wrapper callExpression.
-const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+// Create metadata object from expression and operator.
+const createMetaData = (expression: ts.CallExpression, operator: string) => {
   const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
   const file = expression.getSourceFile().fileName;
 
@@ -42,6 +42,12 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
   const metaData = ts.createObjectLiteral([fileProperty, lineProperty, operatorProperty]);
 
+  return metaData;
+};
+
+// Replace given callExpression with wrapper callExpression.
+const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+  const metaData = createMetaData(expression, operator);
   const wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
   const innerIdentifier = ts.createIdentifier(operator);
 
@@ -51,6 +57,7 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   return completeCall;
 };
 
+// TODO: use flatmap
 // Inject new argument for every given argument.
 const injectArguments = (args: ts.NodeArray<ts.Expression>, newArg: ts.Expression): ts.NodeArray<ts.Expression> => {
   const newArgs: ts.Expression[] = [];
@@ -62,7 +69,7 @@ const injectArguments = (args: ts.NodeArray<ts.Expression>, newArg: ts.Expressio
   return ts.createNodeArray(newArgs);
 };
 
-// Inject pip with a tap operation: tap(x => console.log(x))
+// Inject pipe with a tap operation: tap(x => console.log(x))
 const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
   const parameter = ts.createParameter(
     undefined,
@@ -70,14 +77,17 @@ const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpressio
     undefined,
     ts.createIdentifier('x')
   );
-  const consoleLog = ts.createPropertyAccess(ts.createIdentifier('console'), ts.createIdentifier('log'));
+  const operator = node.getText();
+  const metadata = createMetaData(node, operator);
+  const sendEvent = ts.createIdentifier('sendEventToBackpage');
+
   const lambda = ts.createArrowFunction(
     undefined,
     undefined,
     [parameter],
     undefined,
     undefined,
-    ts.createCall(consoleLog, undefined, [ts.createIdentifier('x')])
+    ts.createCall(sendEvent, undefined, [metadata, ts.createIdentifier('x')])
   );
 
   const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
@@ -102,6 +112,7 @@ const addNamedImportToSourceFile = (rootNode: ts.SourceFile, importName: string,
     ), ...rootNode.statements]);
 };
 
+// DEPRECATED:
 // Add array of wrapper functions to given source file node.
 const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: string[]): ts.SourceFile => {
   const file = 'rxjs_wrapper';
@@ -139,7 +150,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node);
       return foundRxJSCreationOperator
-        ? addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper')
+        ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'sendEventToBackpage'])
         : root;
     }
 

@@ -43,20 +43,26 @@ var isPipeOperator = function (node) {
         .filter(function (node) { return node.name.getText() === 'pipe'; });
     return result.length ? true : false;
 };
-// Replace given callExpression with wrapper callExpression.
-var createWrapperExpression = function (expression, operator) {
+// Create metadata object from expression and operator.
+var createMetaData = function (expression, operator) {
     var line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
     var file = expression.getSourceFile().fileName;
     var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
     var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
     var operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
     var metaData = ts.createObjectLiteral([fileProperty, lineProperty, operatorProperty]);
+    return metaData;
+};
+// Replace given callExpression with wrapper callExpression.
+var createWrapperExpression = function (expression, operator) {
+    var metaData = createMetaData(expression, operator);
     var wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
     var innerIdentifier = ts.createIdentifier(operator);
     var curriedCall = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
     return completeCall;
 };
+// TODO: use flatmap
 // Inject new argument for every given argument.
 var injectArguments = function (args, newArg) {
     var newArgs = [];
@@ -66,11 +72,13 @@ var injectArguments = function (args, newArg) {
     });
     return ts.createNodeArray(newArgs);
 };
-// Inject pip with a tap operation: tap(x => console.log(x))
+// Inject pipe with a tap operation: tap(x => console.log(x))
 var createInjectedPipeExpression = function (node) {
     var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
-    var consoleLog = ts.createPropertyAccess(ts.createIdentifier('console'), ts.createIdentifier('log'));
-    var lambda = ts.createArrowFunction(undefined, undefined, [parameter], undefined, undefined, ts.createCall(consoleLog, undefined, [ts.createIdentifier('x')]));
+    var operator = node.getText();
+    var metadata = createMetaData(node, operator);
+    var sendEvent = ts.createIdentifier('sendEventToBackpage');
+    var lambda = ts.createArrowFunction(undefined, undefined, [parameter], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createIdentifier('x')]));
     var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
     // const newArguments = ts.createNodeArray([tapExpression, ...node.arguments, tapExpression]);
     var newArguments = injectArguments(node.arguments, tapExpression);
@@ -84,6 +92,7 @@ var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
         /*decorators*/ undefined, 
         /*modifiers*/ undefined, ts.createImportClause(undefined, ts.createNamedImports([ts.createImportSpecifier(ts.createIdentifier("" + importName), ts.createIdentifier("" + alias))])), ts.createLiteral("" + file))], rootNode.statements));
 };
+// DEPRECATED:
 // Add array of wrapper functions to given source file node.
 var addWrapperFunctionImportArray = function (rootNode, operators) {
     var file = 'rxjs_wrapper';
@@ -113,7 +122,7 @@ exports.dummyTransformer = function (context) {
             // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
             return foundRxJSCreationOperator
-                ? addNamedImportToSourceFile(root, 'wrapCreationOperator', 'wrapCreationOperator', 'rxjs_wrapper')
+                ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'sendEventToBackpage'])
                 : root;
         }
         return ts.visitNode(rootNode, visit);
