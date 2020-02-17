@@ -1,6 +1,5 @@
 import { FromEventTarget, fromEvent } from 'rxjs/internal/observable/fromEvent';
 import { SchedulerLike, asyncScheduler as async, interval, of, range } from 'rxjs';
-// import "chrome";
 declare var chrome;
 
 interface Message {
@@ -16,8 +15,8 @@ export interface Metadata {
 }
 
 enum MessageType {
-    SubscriptionCreation,
-    EventPassage
+    SubscriptionCreation = 'SubscriptionCreation',
+    EventPassage = 'EventPassage'
 }
 
 const sendToBackpageDeprecated = (operator, line, file) => {
@@ -30,6 +29,7 @@ const sendToBackpageDeprecated = (operator, line, file) => {
 
 // Send given message to the backpage.
 const sendToBackpage = (message: Message): void => {
+    console.log(message);
     chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
         function (response) {
             // ...
@@ -43,7 +43,9 @@ const createMessage = (messageType: MessageType, metadata: Metadata, event?: any
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
-    sendToBackpageDeprecated(metadata.operator, metadata.line, metadata.file);
+    // sendToBackpageDeprecated(metadata.operator, metadata.line, metadata.file);
+    const message = createMessage(MessageType.SubscriptionCreation, metadata);
+    sendToBackpage(message);
     return fn(...args);
 };
 
