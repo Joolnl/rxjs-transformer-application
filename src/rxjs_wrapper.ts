@@ -9,6 +9,7 @@ interface Message {
 }
 
 export interface Metadata {
+    identifier?: string;
     uuid: string,
     file: string;
     line: number;
@@ -35,14 +36,15 @@ const createMessage = (messageType: MessageType, metadata: Metadata, event?: any
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
+    console.log(`${metadata.uuid} ${metadata.line} ${metadata.operator}`);
     const message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
     return fn(...args);
 };
 
 // Send event data to backpage.
-export const sendEventToBackpage = (metadata: Metadata, operator: string, event: any): void => {
-    console.log(`${event} after ${operator}`);
+export const sendEventToBackpage = (metadata: Metadata, operator: string, event: any, subUuid: string): void => {
+    console.log(`${event} after ${operator} to sub ${subUuid} own uuid ${metadata.uuid} line ${metadata.line}`);
     const message = createMessage(MessageType.EventPassage, metadata, event);
     sendToBackpage(message);
 };

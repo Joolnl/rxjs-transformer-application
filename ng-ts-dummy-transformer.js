@@ -22,6 +22,7 @@ var ts = require("typescript");
 var v5 = require("uuid/v5");
 var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
+var subscriptions = new Map();
 // Checks if call expression is in rxjsCreationOperators array.
 var isRxJSCreationOperator = function (node) {
     if (!ts.isCallExpression(node)) {
@@ -46,14 +47,25 @@ var isPipeOperator = function (node) {
 };
 // Generate unique id for filename and line.
 var generateId = function (filename, line) {
+    // Generate id from filename and line in given namespace.
     var uuid = v5("" + filename + line, 'e01462c8-517f-11ea-8d77-2e728ce88125');
     return uuid;
 };
-// Create metadata object from expression and operator.
-var createMetaData = function (expression, operator) {
+// Extract metadata from given call expression.
+var extractMetaData = function (expression) {
     var line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
     var file = expression.getSourceFile().fileName;
     var uuid = generateId(file, line);
+    var identifier;
+    if (ts.isVariableDeclaration(expression.parent)) {
+        var variableDeclaration = expression.parent;
+        identifier = variableDeclaration.name.getText();
+    }
+    return [line, file, uuid, identifier];
+};
+// Create metadata object literal expression from expression and operator.
+var createMetaDataExpression = function (expression, operator) {
+    var _a = extractMetaData(expression), line = _a[0], file = _a[1], uuid = _a[2];
     var uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
     var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
     var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
@@ -61,19 +73,26 @@ var createMetaData = function (expression, operator) {
     var metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
     return metaData;
 };
+// Create MetaData object for internal usage.
+var createMetaDataObject = function (expression, operator) {
+    var _a = extractMetaData(expression), line = _a[0], file = _a[1], uuid = _a[2], identifier = _a[3];
+    return { line: line, file: file, uuid: uuid, identifier: identifier, operator: operator };
+};
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
-    var metaData = createMetaData(expression, operator);
+    var metaDataExpression = createMetaDataExpression(expression, operator);
+    var metaDataObject = createMetaDataObject(expression, operator);
     var wrapIdentifier = ts.createIdentifier('wrapCreationOperator');
     var innerIdentifier = ts.createIdentifier(operator);
-    var curriedCall = ts.createCall(wrapIdentifier, undefined, [metaData, innerIdentifier]);
+    var curriedCall = ts.createCall(wrapIdentifier, undefined, [metaDataExpression, innerIdentifier]);
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+    subscriptions.set(metaDataObject.identifier, metaDataObject); // Save metaDataObject in map for internal usage.
     return completeCall;
 };
 // Creates: tap(x => sendEventToBackpage(metadata, x))
-var createTapsendEventToBackpageExpression = function (metadata, event) { return function (operator) {
+var createTapsendEventToBackpageExpression = function (metadata, event, subUuid) { return function (operator) {
     var sendEvent = ts.createIdentifier('sendEventToBackpage');
-    var lambda = ts.createArrowFunction(undefined, undefined, [event], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x')]));
+    var lambda = ts.createArrowFunction(undefined, undefined, [event], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x'), ts.createLiteral(subUuid)]));
     var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
     return tapExpression;
 }; };
@@ -89,10 +108,16 @@ var injectArguments = function (args, tapExpr) {
 };
 // Inject pipe with a tap operation: tap(x => console.log(x))
 var createInjectedPipeExpression = function (node) {
+    var subMetadata = node.getChildren()
+        .filter(function (n) { return ts.isPropertyAccessExpression(n); })
+        .map(function (n) { return n.expression.getText(); })
+        .map(function (n) { return subscriptions.get(n); })
+        .pop();
+    var subUuid = subMetadata.uuid;
     var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
     var operator = node.getText();
-    var metadata = createMetaData(node, operator);
-    var tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter);
+    var metadata = createMetaDataExpression(node, operator);
+    var tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter, subUuid);
     var newArguments = injectArguments(node.arguments, tapExpressionCreator);
     var newExpression = __assign(__assign({}, node), { arguments: newArguments });
     return newExpression;
@@ -104,7 +129,6 @@ var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
         /*decorators*/ undefined, 
         /*modifiers*/ undefined, ts.createImportClause(undefined, ts.createNamedImports([ts.createImportSpecifier(ts.createIdentifier("" + importName), ts.createIdentifier("" + alias))])), ts.createLiteral("" + file))], rootNode.statements));
 };
-// DEPRECATED:
 // Add array of wrapper functions to given source file node.
 var addWrapperFunctionImportArray = function (rootNode, operators) {
     var file = 'rxjs_wrapper';
