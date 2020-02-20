@@ -31,11 +31,30 @@ describe('Pipeline Transformer', () => {
         );
     };
 
+    const transformedPipelineN2 = (source$: Observable<number>): Observable<number> => {
+        return source$.pipe(
+            curriedWrapOperatorFunction(map(n => n += 1)),
+            curriedUnwrapOperatorFunction(map(n => n += 1))
+        );
+    };
+
     const transformedPipelineN3 = (source$: Observable<number>): Observable<number> => {
         return source$.pipe(
             curriedWrapOperatorFunction(map(n => n += 1)),
             curriedUseWrapOperatorFunction(map(n => n)),
             curriedUnwrapOperatorFunction(map(n => n += 2))
+        );
+    };
+
+    const transformedPipelineN7 = (source$: Observable<number>): Observable<number> => {
+        return source$.pipe(
+            curriedWrapOperatorFunction(map(n => n += 1)),
+            curriedUseWrapOperatorFunction(map(n => n -= 1)),
+            curriedUseWrapOperatorFunction(map(n => n += 1)),
+            curriedUseWrapOperatorFunction(map(n => n -= 1)),
+            curriedUseWrapOperatorFunction(map(n => n += 1)),
+            curriedUseWrapOperatorFunction(map(n => n -= 1)),
+            curriedUnwrapOperatorFunction(map(n => n += 100))
         );
     };
 
@@ -51,6 +70,18 @@ describe('Pipeline Transformer', () => {
         });
     });
 
+    it('pipeline n=2 should add 2 to number', () => {
+        testScheduler.run(({cold, expectObservable}) => {
+            const values = {a: 1, b: 2, c: 700001};
+            const source$ = cold('a-b-c|', values);
+            const expectedMarble = 'a-b-c|';
+            const expectedValues = {a: 3, b: 4, c: 700003};
+
+            const result$ = transformedPipelineN2(source$);
+            expectObservable(result$).toBe(expectedMarble, expectedValues);
+        });
+    });
+
     it('pipeline n=3 should add 3 to number', () => {
         testScheduler.run(({ cold, expectObservable }) => {
             const values = { a: 1, b: 2, c: 1000 };
@@ -59,6 +90,18 @@ describe('Pipeline Transformer', () => {
             const expectedValues = { a: 4, b: 5, c: 1003 };
 
             const result$ = transformedPipelineN3(source$);
+            expectObservable(result$).toBe(expectedMarble, expectedValues);
+        });
+    });
+
+    it('pipeline n=7 should add 100 to number', () => {
+        testScheduler.run(({ cold, expectObservable }) => {
+            const values = { a: 1, b: 2, c: -1000 };
+            const source$ = cold('a-b-c|', values);
+            const expectedMarble = 'a-b-c|';
+            const expectedValues = { a: 101, b: 102, c: -900 };
+
+            const result$ = transformedPipelineN7(source$);
             expectObservable(result$).toBe(expectedMarble, expectedValues);
         });
     });
