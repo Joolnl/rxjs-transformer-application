@@ -54,6 +54,11 @@ exports.useWrapOperatorFunction = function (metadata) { return function (fn) {
         }));
     };
 }; };
+exports.singleWrapOperatorFunction = function (metadata) { return function (fn) {
+    return function (source) {
+        return fn(source).pipe(operators_1.tap(function (e) { return console.log(new Box(e, ++simpleLastUid).value); }));
+    };
+}; };
 // Send event data to backpage.
 exports.sendEventToBackpage = function (metadata, operator, event, subUuid, test) {
     console.log(event + " after " + operator + " to sub " + subUuid + " own uuid " + metadata.uuid + " line " + metadata.line);

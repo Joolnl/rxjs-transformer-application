@@ -65,10 +65,18 @@ type UseWrapOperatorFunction = {
     ) => Observable<Box<R>>;
 };
 
+type SingleWrapOperatorFunction = {
+    <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
+        s: Observable<S>
+    ) => Observable<R>;
+};
+
 // Curryable types.
 type WrapOperatorFunctionMetaCurried = (a: Metadata) => WrapOperatorFunction;
 type UnWrapOperatorFunctionMetaCurried = (a: Metadata) => UnWrapOperatorFunction;
 type UseWrapOperatorFunctionMetaCurried = (a: Metadata) => UseWrapOperatorFunction;
+type SingleWrapOperatorMetaCurried = (a: Metadata) => SingleWrapOperatorFunction;
+
 
 let simpleLastUid: number = 0;
 
@@ -99,6 +107,14 @@ export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (meta
             switchMap(box => {
                 return fn(of(box.value)).pipe(map(result => new Box(result, box.id)));
             })
+        );
+    };
+};
+
+export const singleWrapOperatorFunction: SingleWrapOperatorMetaCurried = (metadata: Metadata) => fn => {
+    return source => {
+        return fn(source).pipe(
+            tap(e => console.log(new Box(e, ++simpleLastUid).value))
         );
     };
 };
