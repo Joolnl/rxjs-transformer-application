@@ -36,24 +36,24 @@ var Box = /** @class */ (function () {
     return Box;
 }());
 var simpleLastUid = 0;
-exports.wrapOperatorFunction = function (fn) {
+exports.wrapOperatorFunction = function (metadata) { return function (fn) {
     return function (source) {
         return fn(source).pipe(operators_1.tap(function (e) { return console.log("Tap from wrap " + e); }), operators_1.map(function (e) { return new Box(e, simpleLastUid += 1); }), operators_1.tap(function (e) { return console.log("And the id is " + e.id); }));
     };
-};
-exports.unWrapOperatorFunction = function (fn) {
+}; };
+exports.unWrapOperatorFunction = function (metadata) { return function (fn) {
     return function (source) {
         var unpacked = source.pipe(operators_1.tap(function (e) { return console.log("Tap from unwrap " + e.value + " with id " + e.id); }), operators_1.map(function (box) { return box.value; }));
         return fn(unpacked);
     };
-};
-exports.useWrapOperatorFunction = function (fn) {
+}; };
+exports.useWrapOperatorFunction = function (metadata) { return function (fn) {
     return function (source) {
         return source.pipe(operators_1.tap(function (e) { return console.log("Tap from use wrap " + e.value + " with id " + e.id); }), operators_1.switchMap(function (box) {
             return fn(rxjs_1.of(box.value)).pipe(operators_1.map(function (result) { return new Box(result, box.id); }));
         }));
     };
-};
+}; };
 // Send event data to backpage.
 exports.sendEventToBackpage = function (metadata, operator, event, subUuid, test) {
     console.log(event + " after " + operator + " to sub " + subUuid + " own uuid " + metadata.uuid + " line " + metadata.line);

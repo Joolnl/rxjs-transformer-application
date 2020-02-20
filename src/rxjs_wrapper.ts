@@ -65,9 +65,14 @@ type UseWrapOperatorFunction = {
     ) => Observable<Box<R>>;
 };
 
+// Curryable types.
+type WrapOperatorFunctionMetaCurried = (a: Metadata) => WrapOperatorFunction;
+type UnWrapOperatorFunctionMetaCurried = (a: Metadata) => UnWrapOperatorFunction;
+type UseWrapOperatorFunctionMetaCurried = (a: Metadata) => UseWrapOperatorFunction;
+
 let simpleLastUid: number = 0;
 
-export const wrapOperatorFunction: WrapOperatorFunction = fn => {
+export const wrapOperatorFunction: WrapOperatorFunctionMetaCurried = (metadata: Metadata) => (fn) => {
     return source => {
         return fn(source).pipe(
             tap(e => console.log(`Tap from wrap ${e}`)),
@@ -77,7 +82,7 @@ export const wrapOperatorFunction: WrapOperatorFunction = fn => {
     };
 };
 
-export const unWrapOperatorFunction: UnWrapOperatorFunction = fn => {
+export const unWrapOperatorFunction: UnWrapOperatorFunctionMetaCurried = (metadata: Metadata) => fn => {
     return source => {
         const unpacked = source.pipe(
             tap(e => console.log(`Tap from unwrap ${e.value} with id ${e.id}`)),
@@ -87,7 +92,7 @@ export const unWrapOperatorFunction: UnWrapOperatorFunction = fn => {
     };
 };
 
-export const useWrapOperatorFunction: UseWrapOperatorFunction = fn => {
+export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (metadata: Metadata) => fn => {
     return source => {
         return source.pipe(
             tap(e => console.log(`Tap from use wrap ${e.value} with id ${e.id}`)),
@@ -97,7 +102,6 @@ export const useWrapOperatorFunction: UseWrapOperatorFunction = fn => {
         );
     };
 };
-
 
 // Send event data to backpage.
 export const sendEventToBackpage = (metadata: Metadata, operator: string, event: any, subUuid: string, test: number): void => {

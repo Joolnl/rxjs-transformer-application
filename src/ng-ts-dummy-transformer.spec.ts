@@ -1,6 +1,6 @@
 import { of, Observable } from 'rxjs';
 import { map, filter } from 'rxjs/operators';
-import { wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction } from '../src/rxjs_wrapper';
+import { wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, Metadata } from '../src/rxjs_wrapper';
 import { TestScheduler } from 'rxjs/testing';
 
 describe('Pipeline Transformer', () => {
@@ -12,11 +12,21 @@ describe('Pipeline Transformer', () => {
         });
     });
 
+    const metadata: Metadata = {
+        uuid: '6ced7567-0277-497f-9465-4d225e190090',
+        file: 'ng-ts-dummy-transformer.spec.ts',
+        line: 20,
+        operator: 'map'
+    };
+    const curriedWrapOperatorFunction = wrapOperatorFunction(metadata);
+    const curriedUnwrapOperatorFunction = unWrapOperatorFunction(metadata);
+    const curriedUseWrapOperatorFunction = useWrapOperatorFunction(metadata);
+
     const transformedPipeline = (source$: Observable<number>): Observable<number> => {
         return source$.pipe(
-            wrapOperatorFunction(map(n => n += 1)),
-            useWrapOperatorFunction(map(n => n)),
-            unWrapOperatorFunction(map(n => n += 2))
+            curriedWrapOperatorFunction(map(n => n += 1)),
+            curriedUseWrapOperatorFunction(map(n => n)),
+            curriedUnwrapOperatorFunction(map(n => n += 2))
         );
     };
 
