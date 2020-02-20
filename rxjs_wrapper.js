@@ -1,5 +1,7 @@
 "use strict";
 exports.__esModule = true;
+var rxjs_1 = require("rxjs");
+var operators_1 = require("rxjs/operators");
 var MessageType;
 (function (MessageType) {
     MessageType["SubscriptionCreation"] = "SubscriptionCreation";
@@ -12,8 +14,8 @@ var sendToBackpage = function (message) {
     });
 };
 // Create message for backpage.
-var createMessage = function (messageType, metadata, event) {
-    return { messageType: messageType, metadata: metadata, event: event };
+var createMessage = function (messageType, metadata, event, subUuid) {
+    return { messageType: messageType, metadata: metadata, event: event, subUuid: subUuid };
 };
 // Wrap creation operator and return it, send data to backpage.
 exports.wrapCreationOperator = function (metadata, fn) { return function () {
@@ -26,9 +28,36 @@ exports.wrapCreationOperator = function (metadata, fn) { return function () {
     sendToBackpage(message);
     return fn.apply(void 0, args);
 }; };
+var Box = /** @class */ (function () {
+    function Box(value, id) {
+        this.value = value;
+        this.id = id;
+    }
+    return Box;
+}());
+var simpleLastUid = 0;
+exports.wrapOperatorFunction = function (fn) {
+    return function (source) {
+        return fn(source).pipe(operators_1.tap(function (e) { return console.log("Tap from wrap " + e); }), operators_1.map(function (e) { return new Box(e, simpleLastUid += 1); }), operators_1.tap(function (e) { return console.log("And the id is " + e.id); }));
+    };
+};
+exports.unWrapOperatorFunction = function (fn) {
+    return function (source) {
+        var unpacked = source.pipe(operators_1.tap(function (e) { return console.log("Tap from unwrap " + e.value + " with id " + e.id); }), operators_1.map(function (box) { return box.value; }));
+        return fn(unpacked);
+    };
+};
+exports.useWrapOperatorFunction = function (fn) {
+    return function (source) {
+        return source.pipe(operators_1.tap(function (e) { return console.log("Tap from use wrap " + e.value + " with id " + e.id); }), operators_1.switchMap(function (box) {
+            return fn(rxjs_1.of(box.value)).pipe(operators_1.map(function (result) { return new Box(result, box.id); }));
+        }));
+    };
+};
 // Send event data to backpage.
-exports.sendEventToBackpage = function (metadata, operator, event, subUuid) {
+exports.sendEventToBackpage = function (metadata, operator, event, subUuid, test) {
     console.log(event + " after " + operator + " to sub " + subUuid + " own uuid " + metadata.uuid + " line " + metadata.line);
-    var message = createMessage(MessageType.EventPassage, metadata, event);
+    console.log("test " + test);
+    var message = createMessage(MessageType.EventPassage, metadata, event, subUuid);
     sendToBackpage(message);
 };

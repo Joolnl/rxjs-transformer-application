@@ -89,7 +89,7 @@ var createWrapperExpression = function (expression, operator) {
     subscriptions.set(metaDataObject.identifier, metaDataObject); // Save metaDataObject in map for internal usage.
     return completeCall;
 };
-// Creates: tap(x => sendEventToBackpage(metadata, x))
+// Creates: tap(x => sendEventToBackpage(metadata, x, subUuid, random))
 var createTapsendEventToBackpageExpression = function (metadata, event, subUuid) { return function (operator) {
     var sendEvent = ts.createIdentifier('sendEventToBackpage');
     var lambda = ts.createArrowFunction(undefined, undefined, [event], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x'), ts.createLiteral(subUuid)]));

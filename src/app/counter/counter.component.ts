@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { fromEvent, interval, range, of } from 'rxjs';
-import { map, merge, scan, tap } from 'rxjs/operators';
+import { fromEvent, interval, range, of, pipe } from 'rxjs';
+import { map, merge, scan, tap, filter } from 'rxjs/operators';
 
 
 
@@ -35,7 +35,13 @@ export class CounterComponent {
       scan((acc, curr) => acc += curr)        // accumulate values.
     ).subscribe(i => this.counter = i);
 
-    const test3 = of(1);
+    const a = interval(1000);
+    a.pipe(
+      map(x => x = 1),
+      tap(x => console.log(x)),
+      filter(x => x > 2),
+      tap(x => console.log('asdasdasd'))
+    );
   }
 
 }

@@ -92,7 +92,7 @@ const createWrapperExpression = (expression: ts.CallExpression, operator: string
   return completeCall;
 };
 
-// Creates: tap(x => sendEventToBackpage(metadata, x))
+// Creates: tap(x => sendEventToBackpage(metadata, x, subUuid, random))
 const createTapsendEventToBackpageExpression = (metadata, event: ts.ParameterDeclaration, subUuid: string) => (operator: string): ts.Expression => {
   const sendEvent = ts.createIdentifier('sendEventToBackpage');
   const lambda = ts.createArrowFunction(
