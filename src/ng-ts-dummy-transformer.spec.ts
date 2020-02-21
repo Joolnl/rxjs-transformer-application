@@ -1,5 +1,5 @@
-import { of, Observable } from 'rxjs';
-import { map, filter } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
     wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, singleWrapOperatorFunction, Metadata
 } from '../src/rxjs_wrapper';

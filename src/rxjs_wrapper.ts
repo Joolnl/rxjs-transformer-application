@@ -36,7 +36,7 @@ const createMessage = (messageType: MessageType, metadata: Metadata, event?: any
 };
 
 // Wrap creation operator and return it, send data to backpage.
-export const wrapCreationOperator = <T extends Array<any>, U>(metadata: Metadata, fn: (...args: T) => U) => (...args: T) => {
+export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: Metadata) => (...args: T) => {
     console.log(`${metadata.uuid} ${metadata.line} ${metadata.operator}`);
     const message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);

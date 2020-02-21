@@ -1,4 +1,4 @@
-import { dummyTransformer } from './ng-ts-dummy-transformer';
+import { dummyTransformer } from './transformer/rxjs_transformer';
 import { AngularCompilerPlugin } from '@ngtools/webpack';
 
 function findAngularCompilerPlugin(webpackCfg): AngularCompilerPlugin | null {

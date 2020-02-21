@@ -18,7 +18,7 @@ var createMessage = function (messageType, metadata, event, subUuid) {
     return { messageType: messageType, metadata: metadata, event: event, subUuid: subUuid };
 };
 // Wrap creation operator and return it, send data to backpage.
-exports.wrapCreationOperator = function (metadata, fn) { return function () {
+exports.wrapCreationOperator = function (fn, metadata) { return function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
