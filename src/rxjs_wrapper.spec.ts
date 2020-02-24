@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, singleWrapOperatorFunction } from '../src/rxjs_wrapper';
+import { wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, singleWrapOperatorFunction } from './rxjs_wrapper';
 import { TestScheduler } from 'rxjs/testing';
 import { Metadata } from '../transformer/metadata';
 
-describe('Pipeline Transformer', () => {
+describe('Pipeline Wrapper', () => {
 
     let testScheduler: TestScheduler;
     beforeEach(() => {
