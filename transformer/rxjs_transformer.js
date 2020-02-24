@@ -45,19 +45,19 @@ var isPipeOperator = function (node) {
         .filter(function (child) { return child.name.getText() === 'pipe'; });
     return result.length ? true : false;
 };
-// Create metadata object literal expression from expression and operator.
-var createMetaDataExpression = function (expression, operator) {
-    var _a = metadata_1.extractMetaData(expression), line = _a.line, file = _a.file, uuid = _a.uuid;
-    var uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
-    var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
-    var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-    var operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-    var metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
-    return metaData;
-};
+// // Create metadata object literal expression from expression and operator.
+// const createMetaDataExpression = (expression: ts.CallExpression, operator: string): ts.ObjectLiteralExpression => {
+//   const { line, file, uuid } = extractMetaData(expression);
+//   const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
+//   const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+//   const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
+//   const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
+//   const metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
+//   return metaData;
+// };
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
-    var metaDataExpression = createMetaDataExpression(expression, operator);
+    var metaDataExpression = metadata_1.createMetaDataExpression(expression, operator);
     var curriedCall = operator_wrapper_1.createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
     metadata_1.registerObservableMetadata(expression, operator);
@@ -86,7 +86,7 @@ var createInjectedPipeExpression = function (node) {
     var subUuid = observableMetadata ? observableMetadata.uuid : '0';
     var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
     var operator = node.getText();
-    var metadata = createMetaDataExpression(node, operator);
+    var metadata = metadata_1.createMetaDataExpression(node, operator);
     var tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter, subUuid);
     var newArguments = injectArguments(node.arguments, tapExpressionCreator);
     var newExpression = __assign(__assign({}, node), { arguments: newArguments });

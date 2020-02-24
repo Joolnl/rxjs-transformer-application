@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import { createWrappedCallExpression, wrapPipeOperators } from './operator_wrapper';
-import { getObservableMetadata, registerObservableMetadata, extractMetaData } from './metadata';
+import { getObservableMetadata, registerObservableMetadata, extractMetaData, createMetaDataExpression } from './metadata';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -33,17 +33,17 @@ const isPipeOperator = (node: ts.Node): boolean => {
   return result.length ? true : false;
 };
 
-// Create metadata object literal expression from expression and operator.
-const createMetaDataExpression = (expression: ts.CallExpression, operator: string): ts.ObjectLiteralExpression => {
-  const { line, file, uuid } = extractMetaData(expression);
-  const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
-  const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
-  const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-  const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-  const metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
+// // Create metadata object literal expression from expression and operator.
+// const createMetaDataExpression = (expression: ts.CallExpression, operator: string): ts.ObjectLiteralExpression => {
+//   const { line, file, uuid } = extractMetaData(expression);
+//   const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
+//   const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+//   const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
+//   const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
+//   const metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
 
-  return metaData;
-};
+//   return metaData;
+// };
 
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {

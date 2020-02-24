@@ -18,15 +18,22 @@ exports.createWrappedCallExpression = function (wrapperName, innerName, args) {
 };
 // const createCurriedWrapCallExpression: CurriedCallExpressionFn = (metadata, wrapperName, innerName, args) {
 // };
+var createTestTapExpression = function () {
+    var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
+    var consoleLog = ts.createPropertyAccess(ts.createIdentifier('console'), ts.createIdentifier('log'));
+    var lambda = ts.createArrowFunction(undefined, undefined, [parameter], undefined, undefined, ts.createCall(consoleLog, undefined, [ts.createIdentifier('x')]));
+    var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
+    return lambda;
+};
 // TODO: turn all operator arguments into wrappedCallExpressions
 // TODO: determine where to place logic to choose appropriate wrapper, like single, frist, last...
 // TODO: probably also require for seperate functions for building the arguments array
 // TODO: but a single function to create the curried wrapper call.
 var argArrayToWrappedArgArray = function (args, metaData) {
-    // map(x => x += 1)
-    var wrapIdentifier = ts.createIdentifier('singleWrapOperatorFunction');
     var result = args.map(function (arg) {
-        return ts.createCall(wrapIdentifier, undefined, [arg]);
+        var a = exports.createWrappedCallExpression('singleWrapOperatorFunction', 'map', [metadata_1.createMetaDataExpression(arg, 'map')]);
+        var b = ts.createCall(a, undefined, arg.arguments);
+        return b;
     });
     return ts.createNodeArray(result);
 };
@@ -35,6 +42,7 @@ exports.wrapPipeOperators = function (node) {
     if (!node.arguments.every(function (arg) { return ts.isCallExpression(arg); })) {
         throw new Error("Trying to wrap non-CallExpression! " + node.getText());
     }
+    console.log("Coming here in wrapPipeOperators with arguments:  " + node.arguments.length);
     var metaData = metadata_1.extractMetaData(node);
     if (node.arguments.length === 1) {
         node.arguments = argArrayToWrappedArgArray(node.arguments, metaData);

@@ -55,3 +55,15 @@ export const getObservableMetadata = (node: ts.CallExpression): Metadata => {
 
     return observableMetadata.get(observableIdentifier);
 };
+
+// Create metadata object literal expression from expression and operator.
+export const createMetaDataExpression = (expression: ts.CallExpression, operator: string): ts.ObjectLiteralExpression => {
+    const { line, file, uuid } = extractMetaData(expression);
+    const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
+    const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+    const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
+    const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
+    const metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
+  
+    return metaData;
+  };

@@ -52,3 +52,13 @@ exports.getObservableMetadata = function (node) {
     }
     return observableMetadata.get(observableIdentifier);
 };
+// Create metadata object literal expression from expression and operator.
+exports.createMetaDataExpression = function (expression, operator) {
+    var _a = exports.extractMetaData(expression), line = _a.line, file = _a.file, uuid = _a.uuid;
+    var uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
+    var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+    var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
+    var operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
+    var metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
+    return metaData;
+};

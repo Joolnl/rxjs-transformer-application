@@ -58,7 +58,7 @@ exports.singleWrapOperatorFunction = function (metadata) { return function (fn) 
     console.log("singleWrapOperatorFunction called!");
     // return fn;
     return function (source) {
-        return fn(source).pipe(operators_1.tap(function (e) { return console.log(new Box(e, ++simpleLastUid).value); }));
+        return fn(source).pipe(operators_1.tap(function (e) { return console.log(new Box(e, ++simpleLastUid).value + " with id:" + simpleLastUid); }));
     };
 }; };
 // Send event data to backpage.

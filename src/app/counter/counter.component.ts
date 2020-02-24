@@ -19,12 +19,13 @@ export class CounterComponent {
     const b = range(1, 12);
     const test2 = of(1);
 
-    const test3 = of(1)
-    const test4 = test3.pipe(map(x => x += 1)).subscribe(x => console.log(x));
+    const test3 = of(107107).pipe(
+      map(x => x)
+    ).subscribe(x => console.log(x));
+
     // test.subscribe(i => console.log(i));
     // test2.subscribe(i => console.log(`called ${i}`));
   }
-
 
   // Make two streams from both buttons, map add to 1 substract to -1, merge and scan.
   ngAfterViewInit() {

@@ -107,7 +107,7 @@ export const singleWrapOperatorFunction: SingleWrapOperatorMetaCurried = (metada
     // return fn;
     return source => {
         return fn(source).pipe(
-            tap(e => console.log(new Box(e, ++simpleLastUid).value))
+            tap(e => console.log(`${new Box(e, ++simpleLastUid).value} with id:${simpleLastUid}`))
         );
     };
 };
