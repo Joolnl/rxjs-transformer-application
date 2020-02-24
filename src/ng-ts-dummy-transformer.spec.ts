@@ -1,9 +1,8 @@
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import {
-    wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, singleWrapOperatorFunction, Metadata
-} from '../src/rxjs_wrapper';
+import { wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, singleWrapOperatorFunction } from '../src/rxjs_wrapper';
 import { TestScheduler } from 'rxjs/testing';
+import { Metadata } from '../transformer/metadata';
 
 describe('Pipeline Transformer', () => {
 
@@ -59,11 +58,11 @@ describe('Pipeline Transformer', () => {
     };
 
     it('pipeline n=1 should add 1 to number', () => {
-        testScheduler.run(({cold, expectObservable}) => {
-            const values = {a: 1, b: 2, c: 700001};
+        testScheduler.run(({ cold, expectObservable }) => {
+            const values = { a: 1, b: 2, c: 700001 };
             const source$ = cold('a-b-c|', values);
             const expectedMarble = 'a-b-c|';
-            const expectedValues = {a: 2, b: 3, c: 700002};
+            const expectedValues = { a: 2, b: 3, c: 700002 };
 
             const result$ = transformedPipelineN1(source$);
             expectObservable(result$).toBe(expectedMarble, expectedValues);
@@ -71,11 +70,11 @@ describe('Pipeline Transformer', () => {
     });
 
     it('pipeline n=2 should add 2 to number', () => {
-        testScheduler.run(({cold, expectObservable}) => {
-            const values = {a: 1, b: 2, c: 700001};
+        testScheduler.run(({ cold, expectObservable }) => {
+            const values = { a: 1, b: 2, c: 700001 };
             const source$ = cold('a-b-c|', values);
             const expectedMarble = 'a-b-c|';
-            const expectedValues = {a: 3, b: 4, c: 700003};
+            const expectedValues = { a: 3, b: 4, c: 700003 };
 
             const result$ = transformedPipelineN2(source$);
             expectObservable(result$).toBe(expectedMarble, expectedValues);

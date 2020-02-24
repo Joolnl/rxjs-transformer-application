@@ -1,12 +1,9 @@
 import * as ts from 'typescript';
-import { Metadata } from '../src/rxjs_wrapper';
-import v5 = require('uuid/v5');
-import { createWrappedCallExpression } from './operator_wrapper';
-import { getObservableMetadata, registerObservableMetadata, extractMetaData } from './metadata'
+import { createWrappedCallExpression, wrapPipeOperators } from './operator_wrapper';
+import { getObservableMetadata, registerObservableMetadata, extractMetaData } from './metadata';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
-
 
 // Checks if call expression is in rxjsCreationOperators array.
 const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
@@ -48,24 +45,13 @@ const createMetaDataExpression = (expression: ts.CallExpression, operator: strin
   return metaData;
 };
 
-// Create MetaData object for internal usage.
-const createMetaDataObject = (expression: ts.CallExpression, operator: string): Metadata => {
-  // const [line, file, uuid, identifier] = extractMetaData(expression);
-  const { line, file, uuid, identifier } = extractMetaData(expression);
-  return { line, file, uuid, identifier, operator };
-};
-
 // Replace given callExpression with wrapper callExpression.
 const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
   const metaDataExpression = createMetaDataExpression(expression, operator);
-  // const metaDataObject = createMetaDataObject(expression, operator);
-
   const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
   const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
 
-
   registerObservableMetadata(expression, operator);
-
   return completeCall;
 };
 
@@ -98,41 +84,10 @@ const injectArguments = (args: ts.NodeArray<ts.Expression>, tapExpr: (operator: 
   return ts.createNodeArray(newArgs);
 };
 
-// Wrapp all operators in array and return them.
-const argArrayToWrappedArgArray = (args: ts.NodeArray<ts.Expression>, metaData: Metadata): ts.NodeArray<ts.Expression> => {
-  // const wrappedSingleExpression = ts.createCall()
-
-  const result = args.map((expression: ts.CallExpression) => {
-    return expression;
-  });
-  return ts.createNodeArray(result);
-};
-
-// Wrap all operators in given pipe and return expression.
-const wrapPipeOperators = (node: ts.CallExpression): ts.CallExpression => {
-  const observableMetadata = getObservableMetadata(node);
-  console.log(`observableMetaData is ${observableMetadata}`);
-  const operator = node.getChildren()
-    .filter(n => ts.isPropertyAccessExpression(n))
-    .map((n: ts.PropertyAccessExpression) => n.name.getText())
-    .pop();
-
-
-  const metaData = createMetaDataObject(node, operator);
-
-  if (node.arguments.length === 1) {
-    node.arguments = argArrayToWrappedArgArray(node.arguments, metaData);
-  }
-
-  return node;
-};
-
 // Inject pipe with a tap operation: tap(x => console.log(x))
 const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
   const observableMetadata = getObservableMetadata(node);
-
   const subUuid = observableMetadata ? observableMetadata.uuid : '0';
-
   const parameter = ts.createParameter(
     undefined,
     undefined,
@@ -166,7 +121,7 @@ const addNamedImportToSourceFile = (rootNode: ts.SourceFile, importName: string,
 
 // Add array of wrapper functions to given source file node.
 const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: string[]): ts.SourceFile => {
-  const file = 'rxjs_wrapper';
+  const file = 'src/rxjs_wrapper';
   operators
     .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file));
   return rootNode;
@@ -196,18 +151,24 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
 
         // if pipe operator, inject it.
         if (isPipeOperator(node)) {
-          wrapPipeOperators(node as ts.CallExpression);
-          return createInjectedPipeExpression(node as ts.CallExpression);
+          try {
+            node = wrapPipeOperators(node as ts.CallExpression);
+          } catch (e) {
+            console.log(e);
+          }
+          
+          return node;
+          // return createInjectedPipeExpression(node as ts.CallExpression);
           // return ts.visitEachChild(createInjectedPipeExpression(node as ts.CallExpression), realVisit, context);
         }
 
         return ts.visitEachChild(node, realVisit, context);
-      }
+      };
 
       // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node);
       return foundRxJSCreationOperator
-        ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'sendEventToBackpage'])
+        ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'singleWrapOperatorFunction', 'sendEventToBackpage'])
         : root;
     }
 

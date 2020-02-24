@@ -1,9 +1,9 @@
 import * as ts from 'typescript';
-import v5 = require('uuid/v5');
+import * as v5 from 'uuid/v5';
 
-interface Metadata {
+export interface Metadata {
     identifier?: string;
-    uuid: string,
+    uuid: string;
     file: string;
     line: number;
     operator?: string;

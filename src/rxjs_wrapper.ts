@@ -1,5 +1,6 @@
 import { of, Observable } from 'rxjs';
 import { map, tap, switchMap } from 'rxjs/operators';
+import { Metadata } from '../transformer/metadata';
 declare var chrome;
 
 interface Message {
@@ -7,14 +8,6 @@ interface Message {
     metadata: Metadata,
     event?: any,
     subUuid?: string
-}
-
-export interface Metadata {
-    identifier?: string;
-    uuid: string,
-    file: string;
-    line: number;
-    operator: string;
 }
 
 enum MessageType {
@@ -53,11 +46,9 @@ type WrapOperatorFunction = {
     ) => Observable<Box<R>>;
 };
 
-type UnWrapOperatorFunction = {
-    <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
-        s: Observable<Box<S>>
-    ) => Observable<R>;
-};
+type UnWrapOperatorFunction = <T, S, R>(fn: (s: Observable<S>) => Observable<R>) => (
+    s: Observable<Box<S>>
+) => Observable<R>;
 
 type UseWrapOperatorFunction = {
     <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
@@ -112,6 +103,7 @@ export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (meta
 };
 
 export const singleWrapOperatorFunction: SingleWrapOperatorMetaCurried = (metadata: Metadata) => fn => {
+    console.log(`singleWrapOperatorFunction called!`);
     return source => {
         return fn(source).pipe(
             tap(e => console.log(new Box(e, ++simpleLastUid).value))
