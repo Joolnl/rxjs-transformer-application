@@ -20,7 +20,7 @@ export class CounterComponent {
     const test2 = of(1);
 
     const test3 = of(1)
-    test3.pipe(map(x => x += 1));
+    const test4 = test3.pipe(map(x => x += 1)).subscribe(x => console.log(x));
     // test.subscribe(i => console.log(i));
     // test2.subscribe(i => console.log(`called ${i}`));
   }

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { wrapOperatorFunction, unWrapOperatorFunction, useWrapOperatorFunction, singleWrapOperatorFunction } from './rxjs_wrapper';
 import { TestScheduler } from 'rxjs/testing';
@@ -102,6 +102,14 @@ describe('Pipeline Wrapper', () => {
 
             const result$ = transformedPipelineN7(source$);
             expectObservable(result$).toBe(expectedMarble, expectedValues);
+        });
+    });
+
+    it('of(1) should return 1', () => {
+        of(1).pipe(
+            curriedSingleWrapOperatorFunction(map(x => x))
+        ).subscribe(x => {
+            expect(x).toBe(1);
         });
     });
 });

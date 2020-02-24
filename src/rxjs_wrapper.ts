@@ -104,6 +104,7 @@ export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (meta
 
 export const singleWrapOperatorFunction: SingleWrapOperatorMetaCurried = (metadata: Metadata) => fn => {
     console.log(`singleWrapOperatorFunction called!`);
+    // return fn;
     return source => {
         return fn(source).pipe(
             tap(e => console.log(new Box(e, ++simpleLastUid).value))
