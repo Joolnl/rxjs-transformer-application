@@ -42,47 +42,6 @@ var createWrapperExpression = function (expression, operator) {
     metadata_1.registerObservableMetadata(expression, operator);
     return completeCall;
 };
-// // Creates: tap(x => sendEventToBackpage(metadata, x, subUuid, random))
-// const createTapsendEventToBackpageExpression = (metadata, event: ts.ParameterDeclaration, subUuid: string) => (operator: string): ts.Expression => {
-//     const sendEvent = ts.createIdentifier('sendEventToBackpage');
-//     const lambda = ts.createArrowFunction(
-//       undefined,
-//       undefined,
-//       [event],
-//       undefined,
-//       undefined,
-//       ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x'), ts.createLiteral(subUuid)])
-//     );
-//     const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-//     return tapExpression;
-//   };
-// // Inject new argument for every given argument.
-// const injectArguments = (args: ts.NodeArray<ts.Expression>, tapExpr: (operator: string) => ts.Expression): ts.NodeArray<ts.Expression> => {
-//   const newArgs: ts.Expression[] = [];
-//   newArgs.push(tapExpr('initial'));
-//   args.forEach((el) => {
-//     newArgs.push(el);
-//     newArgs.push(tapExpr(el.getText()));
-//   });
-//   return ts.createNodeArray(newArgs);
-// };
-// // Inject pipe with a tap operation: tap(x => console.log(x))
-// const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
-//   const observableMetadata = getObservableMetadata(node);
-//   const subUuid = observableMetadata ? observableMetadata.uuid : '0';
-//   const parameter = ts.createParameter(
-//     undefined,
-//     undefined,
-//     undefined,
-//     ts.createIdentifier('x')
-//   );
-//   const operator = node.getText();
-//   const metadata = createMetaDataExpression(node, operator);
-//   const tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter, subUuid);
-//   const newArguments = injectArguments(node.arguments, tapExpressionCreator);
-//   const newExpression = { ...node, arguments: newArguments };
-//   return newExpression;
-// };
 // Add import to given SourceFile.
 // format: import importname as alias from file
 var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
