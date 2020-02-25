@@ -54,11 +54,11 @@ exports.useWrapOperatorFunction = function (metadata) { return function (fn) {
         }));
     };
 }; };
+// Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 exports.singleWrapOperatorFunction = function (metadata) { return function (fn) {
     console.log("singleWrapOperatorFunction called!");
-    // return fn;
     return function (source) {
-        return fn(source).pipe(operators_1.tap(function (e) { return console.log(new Box(e, ++simpleLastUid).value + " with id:" + simpleLastUid); }));
+        return source.pipe(operators_1.map(function (e) { return new Box(e, ++simpleLastUid); }), operators_1.tap(function (e) { return console.log(e); }), operators_1.tap(function (e) { return console.log(e.value); }), operators_1.map(function (e) { return e.value; }));
     };
 }; };
 // Send event data to backpage.

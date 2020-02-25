@@ -29,11 +29,13 @@ var createTestTapExpression = function () {
 // TODO: determine where to place logic to choose appropriate wrapper, like single, frist, last...
 // TODO: probably also require for seperate functions for building the arguments array
 // TODO: but a single function to create the curried wrapper call.
-var argArrayToWrappedArgArray = function (args, metaData) {
+var argArrayToWrappedArgArray = function (args) {
     var result = args.map(function (arg) {
-        var a = exports.createWrappedCallExpression('singleWrapOperatorFunction', 'map', [metadata_1.createMetaDataExpression(arg, 'map')]);
-        var b = ts.createCall(a, undefined, arg.arguments);
-        return b;
+        var operator = arg.expression.getText();
+        var curried = exports.createWrappedCallExpression('singleWrapOperatorFunction', operator, [metadata_1.createMetaDataExpression(arg, operator)]);
+        var complete = ts.createCall(curried, undefined, arg.arguments);
+        arg.arguments.map(function (arg) { return console.log("arg arguments " + arg.getText() + " " + ts.SyntaxKind[arg.kind]); });
+        return complete;
     });
     return ts.createNodeArray(result);
 };
@@ -43,9 +45,8 @@ exports.wrapPipeOperators = function (node) {
         throw new Error("Trying to wrap non-CallExpression! " + node.getText());
     }
     console.log("Coming here in wrapPipeOperators with arguments:  " + node.arguments.length);
-    var metaData = metadata_1.extractMetaData(node);
     if (node.arguments.length === 1) {
-        node.arguments = argArrayToWrappedArgArray(node.arguments, metaData);
+        node.arguments = argArrayToWrappedArgArray(node.arguments);
     }
     return node;
 };

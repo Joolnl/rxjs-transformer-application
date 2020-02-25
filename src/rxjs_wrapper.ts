@@ -56,17 +56,19 @@ type UseWrapOperatorFunction = {
     ) => Observable<Box<R>>;
 };
 
-type SingleWrapOperatorFunction = {
+type SingleWrapOperatorFunctionDeprecated = {
     <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
         s: Observable<S>
     ) => Observable<R>;
 };
 
+type SingleWrapOperatorFunction = (metadata: Metadata) => <T, S, R>(fn: (s: Observable<S>) => Observable<R>) => (source: Observable<S>) => Observable<S | R>
+
 // Curryable types.
 type WrapOperatorFunctionMetaCurried = (a: Metadata) => WrapOperatorFunction;
 type UnWrapOperatorFunctionMetaCurried = (a: Metadata) => UnWrapOperatorFunction;
 type UseWrapOperatorFunctionMetaCurried = (a: Metadata) => UseWrapOperatorFunction;
-type SingleWrapOperatorMetaCurried = (a: Metadata) => SingleWrapOperatorFunction;
+type SingleWrapOperatorMetaCurriedDeprecated = (a: Metadata) => SingleWrapOperatorFunction;
 
 
 let simpleLastUid: number = 0;
@@ -102,12 +104,15 @@ export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (meta
     };
 };
 
-export const singleWrapOperatorFunction: SingleWrapOperatorMetaCurried = (metadata: Metadata) => fn => {
+// Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
+export const singleWrapOperatorFunction: SingleWrapOperatorFunction = (metadata: Metadata) => fn => {
     console.log(`singleWrapOperatorFunction called!`);
-    // return fn;
     return source => {
-        return fn(source).pipe(
-            tap(e => console.log(`${new Box(e, ++simpleLastUid).value} with id:${simpleLastUid}`))
+        return source.pipe(
+            map(e => new Box(e, ++simpleLastUid)),
+            tap(e => console.log(e)),
+            tap(e => console.log(e.value)),
+            map(e => e.value)
         );
     };
 };

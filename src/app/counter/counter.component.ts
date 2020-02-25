@@ -23,6 +23,11 @@ export class CounterComponent {
       map(x => x)
     ).subscribe(x => console.log(x));
 
+    // TODO: the arrowfunction as an argument causes an error.
+    const test5 = of(207207).pipe(
+      map(x => x -= 1)
+    ).subscribe(x => console.log(x));
+
     // test.subscribe(i => console.log(i));
     // test2.subscribe(i => console.log(`called ${i}`));
   }

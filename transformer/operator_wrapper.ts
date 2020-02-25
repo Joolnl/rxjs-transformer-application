@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import { Metadata, extractMetaData, createMetaDataExpression } from './metadata';
+import { createTestSourceFile } from './expressionFactory';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
 type CurriedCallExpressionFn = (a: Metadata, b: string, c: string, d?: ts.Expression[]) => ts.CallExpression;
@@ -37,11 +38,13 @@ const createTestTapExpression = () => {
 // TODO: determine where to place logic to choose appropriate wrapper, like single, frist, last...
 // TODO: probably also require for seperate functions for building the arguments array
 // TODO: but a single function to create the curried wrapper call.
-const argArrayToWrappedArgArray = (args: ts.NodeArray<ts.CallExpression>, metaData: Metadata): ts.NodeArray<ts.Expression> => {
+const argArrayToWrappedArgArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
   const result = args.map(arg => {
-    const a = createWrappedCallExpression('singleWrapOperatorFunction', 'map', [createMetaDataExpression(arg, 'map')]);
-    const b = ts.createCall(a, undefined, arg.arguments);
-    return b;
+    const operator = arg.expression.getText();
+    const curried = createWrappedCallExpression('singleWrapOperatorFunction', operator, [createMetaDataExpression(arg, operator)]);
+    const complete = ts.createCall(curried, undefined, arg.arguments);
+    arg.arguments.map(arg => console.log(`arg arguments ${arg.getText()} ${ts.SyntaxKind[arg.kind]}`));
+    return complete;
   });
 
   return ts.createNodeArray(result);
@@ -55,10 +58,9 @@ export const wrapPipeOperators = (node: ts.CallExpression): ts.CallExpression =>
 
   console.log(`Coming here in wrapPipeOperators with arguments:  ${node.arguments.length}`);
 
-  const metaData = extractMetaData(node);
-
   if (node.arguments.length === 1) {
-    node.arguments = argArrayToWrappedArgArray(node.arguments as ts.NodeArray<ts.CallExpression>, metaData);
+    node.arguments = argArrayToWrappedArgArray(node.arguments as ts.NodeArray<ts.CallExpression>);
+    
   }
 
   return node;

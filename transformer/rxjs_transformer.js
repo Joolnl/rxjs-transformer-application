@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
     for (var r = Array(s), k = 0, i = 0; i < il; i++)
@@ -45,16 +34,6 @@ var isPipeOperator = function (node) {
         .filter(function (child) { return child.name.getText() === 'pipe'; });
     return result.length ? true : false;
 };
-// // Create metadata object literal expression from expression and operator.
-// const createMetaDataExpression = (expression: ts.CallExpression, operator: string): ts.ObjectLiteralExpression => {
-//   const { line, file, uuid } = extractMetaData(expression);
-//   const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
-//   const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
-//   const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-//   const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-//   const metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty]);
-//   return metaData;
-// };
 // Replace given callExpression with wrapper callExpression.
 var createWrapperExpression = function (expression, operator) {
     var metaDataExpression = metadata_1.createMetaDataExpression(expression, operator);
@@ -63,35 +42,47 @@ var createWrapperExpression = function (expression, operator) {
     metadata_1.registerObservableMetadata(expression, operator);
     return completeCall;
 };
-// Creates: tap(x => sendEventToBackpage(metadata, x, subUuid, random))
-var createTapsendEventToBackpageExpression = function (metadata, event, subUuid) { return function (operator) {
-    var sendEvent = ts.createIdentifier('sendEventToBackpage');
-    var lambda = ts.createArrowFunction(undefined, undefined, [event], undefined, undefined, ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x'), ts.createLiteral(subUuid)]));
-    var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-    return tapExpression;
-}; };
-// Inject new argument for every given argument.
-var injectArguments = function (args, tapExpr) {
-    var newArgs = [];
-    newArgs.push(tapExpr('initial'));
-    args.forEach(function (el) {
-        newArgs.push(el);
-        newArgs.push(tapExpr(el.getText()));
-    });
-    return ts.createNodeArray(newArgs);
-};
-// Inject pipe with a tap operation: tap(x => console.log(x))
-var createInjectedPipeExpression = function (node) {
-    var observableMetadata = metadata_1.getObservableMetadata(node);
-    var subUuid = observableMetadata ? observableMetadata.uuid : '0';
-    var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
-    var operator = node.getText();
-    var metadata = metadata_1.createMetaDataExpression(node, operator);
-    var tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter, subUuid);
-    var newArguments = injectArguments(node.arguments, tapExpressionCreator);
-    var newExpression = __assign(__assign({}, node), { arguments: newArguments });
-    return newExpression;
-};
+// // Creates: tap(x => sendEventToBackpage(metadata, x, subUuid, random))
+// const createTapsendEventToBackpageExpression = (metadata, event: ts.ParameterDeclaration, subUuid: string) => (operator: string): ts.Expression => {
+//     const sendEvent = ts.createIdentifier('sendEventToBackpage');
+//     const lambda = ts.createArrowFunction(
+//       undefined,
+//       undefined,
+//       [event],
+//       undefined,
+//       undefined,
+//       ts.createCall(sendEvent, undefined, [metadata, ts.createLiteral(operator), ts.createIdentifier('x'), ts.createLiteral(subUuid)])
+//     );
+//     const tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
+//     return tapExpression;
+//   };
+// // Inject new argument for every given argument.
+// const injectArguments = (args: ts.NodeArray<ts.Expression>, tapExpr: (operator: string) => ts.Expression): ts.NodeArray<ts.Expression> => {
+//   const newArgs: ts.Expression[] = [];
+//   newArgs.push(tapExpr('initial'));
+//   args.forEach((el) => {
+//     newArgs.push(el);
+//     newArgs.push(tapExpr(el.getText()));
+//   });
+//   return ts.createNodeArray(newArgs);
+// };
+// // Inject pipe with a tap operation: tap(x => console.log(x))
+// const createInjectedPipeExpression = (node: ts.CallExpression): ts.CallExpression => {
+//   const observableMetadata = getObservableMetadata(node);
+//   const subUuid = observableMetadata ? observableMetadata.uuid : '0';
+//   const parameter = ts.createParameter(
+//     undefined,
+//     undefined,
+//     undefined,
+//     ts.createIdentifier('x')
+//   );
+//   const operator = node.getText();
+//   const metadata = createMetaDataExpression(node, operator);
+//   const tapExpressionCreator = createTapsendEventToBackpageExpression(metadata, parameter, subUuid);
+//   const newArguments = injectArguments(node.arguments, tapExpressionCreator);
+//   const newExpression = { ...node, arguments: newArguments };
+//   return newExpression;
+// };
 // Add import to given SourceFile.
 // format: import importname as alias from file
 var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
