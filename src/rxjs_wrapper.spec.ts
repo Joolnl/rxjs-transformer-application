@@ -106,10 +106,8 @@ describe('Pipeline Wrapper', () => {
     });
 
     it('of(1) should return 1', () => {
-        of(1).pipe(
-            curriedSingleWrapOperatorFunction(map(x => x))
-        ).subscribe(x => {
-            expect(x).toBe(1);
-        });
+        const test5 = of(207207).pipe(
+            map(x => x -= 1)
+          ).subscribe(x => expect(x).toBe(207206));
     });
 });

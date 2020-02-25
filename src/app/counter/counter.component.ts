@@ -25,7 +25,12 @@ export class CounterComponent {
 
     // TODO: the arrowfunction as an argument causes an error.
     const test5 = of(207207).pipe(
-      map(x => x -= 1)
+      map(x => 307307),
+      map(x => 407407)
+    ).subscribe(x => console.log(x));
+
+    const test6 = of(777).pipe(
+      filter(x => x > 1)
     ).subscribe(x => console.log(x));
 
     // test.subscribe(i => console.log(i));

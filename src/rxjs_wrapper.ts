@@ -1,5 +1,5 @@
-import { of, Observable } from 'rxjs';
-import { map, tap, switchMap } from 'rxjs/operators';
+import { Observable, MonoTypeOperatorFunction } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { Metadata } from '../transformer/metadata';
 declare var chrome;
 
@@ -40,81 +40,95 @@ class Box<T> {
     constructor(public value: T, public id: number) { }
 }
 
-type WrapOperatorFunction = {
-    <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
-        s: Observable<S>
-    ) => Observable<Box<R>>;
-};
+// type WrapOperatorFunction = {
+//     <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
+//         s: Observable<S>
+//     ) => Observable<Box<R>>;
+// };
 
-type UnWrapOperatorFunction = <T, S, R>(fn: (s: Observable<S>) => Observable<R>) => (
-    s: Observable<Box<S>>
-) => Observable<R>;
+// type UnWrapOperatorFunction = <T, S, R>(fn: (s: Observable<S>) => Observable<R>) => (
+//     s: Observable<Box<S>>
+// ) => Observable<R>;
 
-type UseWrapOperatorFunction = {
-    <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
-        s: Observable<Box<S>>
-    ) => Observable<Box<R>>;
-};
+// type UseWrapOperatorFunction = {
+//     <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
+//         s: Observable<Box<S>>
+//     ) => Observable<Box<R>>;
+// };
 
-type SingleWrapOperatorFunctionDeprecated = {
-    <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
-        s: Observable<S>
-    ) => Observable<R>;
-};
+// type SingleWrapOperatorFunctionDeprecated = {
+//     <T, S, R>(fn: (s: Observable<S>) => Observable<R>): (
+//         s: Observable<S>
+//     ) => Observable<R>;
+// };
 
-type SingleWrapOperatorFunction = (metadata: Metadata) => <T, S, R>(fn: (s: Observable<S>) => Observable<R>) => (source: Observable<S>) => Observable<S | R>
+// type SingleWrapOperatorFunction = (metadata: Metadata) => <T, S, R>(fn: (s: Observable<S>) => Observable<R>) => (source: Observable<S>) => Observable<S | R>
 
-// Curryable types.
-type WrapOperatorFunctionMetaCurried = (a: Metadata) => WrapOperatorFunction;
-type UnWrapOperatorFunctionMetaCurried = (a: Metadata) => UnWrapOperatorFunction;
-type UseWrapOperatorFunctionMetaCurried = (a: Metadata) => UseWrapOperatorFunction;
-type SingleWrapOperatorMetaCurriedDeprecated = (a: Metadata) => SingleWrapOperatorFunction;
+// // Curryable types.
+// type WrapOperatorFunctionMetaCurried = (a: Metadata) => WrapOperatorFunction;
+// type UnWrapOperatorFunctionMetaCurried = (a: Metadata) => UnWrapOperatorFunction;
+// type UseWrapOperatorFunctionMetaCurried = (a: Metadata) => UseWrapOperatorFunction;
+// type SingleWrapOperatorMetaCurriedDeprecated = (a: Metadata) => SingleWrapOperatorFunction;
 
+
+
+
+// export const wrapOperatorFunction: WrapOperatorFunctionMetaCurried = (metadata: Metadata) => (fn) => {
+//     return source => {
+//         return fn(source).pipe(
+//             tap(e => console.log(`Tap from wrap ${e}`)),
+//             map(e => new Box(e, simpleLastUid += 1)),
+//             tap(e => console.log(`And the id is ${e.id}`))
+//         );
+//     };
+// };
+
+// export const unWrapOperatorFunction: UnWrapOperatorFunctionMetaCurried = (metadata: Metadata) => fn => {
+//     return source => {
+//         const unpacked = source.pipe(
+//             tap(e => console.log(`Tap from unwrap ${e.value} with id ${e.id}`)),
+//             map(box => box.value)
+//         );
+//         return fn(unpacked);
+//     };
+// };
+
+// export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (metadata: Metadata) => fn => {
+//     return source => {
+//         return source.pipe(
+//             tap(e => console.log(`Tap from use wrap ${e.value} with id ${e.id}`)),
+//             switchMap(box => {
+//                 return fn(of(box.value)).pipe(map(result => new Box(result, box.id)));
+//             })
+//         );
+//     };
+// };
 
 let simpleLastUid: number = 0;
 
-export const wrapOperatorFunction: WrapOperatorFunctionMetaCurried = (metadata: Metadata) => (fn) => {
-    return source => {
-        return fn(source).pipe(
-            tap(e => console.log(`Tap from wrap ${e}`)),
-            map(e => new Box(e, simpleLastUid += 1)),
-            tap(e => console.log(`And the id is ${e.id}`))
-        );
-    };
-};
+// Unpack given box or event;
+const unpack = <T>(event: T | Box<T>): { id: number, event: T } => {
+    if (event instanceof Box) {
+        return { id: event.id, event: event.value };
+    } else {
+        return { id: ++simpleLastUid, event: event };
+    }
 
-export const unWrapOperatorFunction: UnWrapOperatorFunctionMetaCurried = (metadata: Metadata) => fn => {
-    return source => {
-        const unpacked = source.pipe(
-            tap(e => console.log(`Tap from unwrap ${e.value} with id ${e.id}`)),
-            map(box => box.value)
-        );
-        return fn(unpacked);
-    };
-};
-
-export const useWrapOperatorFunction: UseWrapOperatorFunctionMetaCurried = (metadata: Metadata) => fn => {
-    return source => {
-        return source.pipe(
-            tap(e => console.log(`Tap from use wrap ${e.value} with id ${e.id}`)),
-            switchMap(box => {
-                return fn(of(box.value)).pipe(map(result => new Box(result, box.id)));
-            })
-        );
-    };
 };
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
-export const singleWrapOperatorFunction: SingleWrapOperatorFunction = (metadata: Metadata) => fn => {
-    console.log(`singleWrapOperatorFunction called!`);
-    return source => {
-        return source.pipe(
-            map(e => new Box(e, ++simpleLastUid)),
-            tap(e => console.log(e)),
-            tap(e => console.log(e.value)),
-            map(e => e.value)
-        );
-    };
+export const singleWrapOperatorFunction = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean) => (source$: Observable<T>) => {
+    let id: number;
+    return source$.pipe(
+        map(e => unpack(e)),
+        map(e => {
+            id = e.id;
+            return e.event
+        }),
+        operatorFn,
+        tap(e => console.log(`${id} ${e}`)),
+        map(e => last ? e : new Box<T>(e, id))
+    );
 };
 
 // Send event data to backpage.

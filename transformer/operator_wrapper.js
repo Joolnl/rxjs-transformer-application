@@ -8,7 +8,6 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
-var metadata_1 = require("./metadata");
 // Returns an expression with given wrapperName wrapping given expression as argument.
 exports.createWrappedCallExpression = function (wrapperName, innerName, args) {
     var wrapIdentifier = ts.createIdentifier(wrapperName);
@@ -16,27 +15,16 @@ exports.createWrappedCallExpression = function (wrapperName, innerName, args) {
     var call = ts.createCall(wrapIdentifier, undefined, __spreadArrays([innerIdentifier], args));
     return call;
 };
-// const createCurriedWrapCallExpression: CurriedCallExpressionFn = (metadata, wrapperName, innerName, args) {
-// };
-var createTestTapExpression = function () {
-    var parameter = ts.createParameter(undefined, undefined, undefined, ts.createIdentifier('x'));
-    var consoleLog = ts.createPropertyAccess(ts.createIdentifier('console'), ts.createIdentifier('log'));
-    var lambda = ts.createArrowFunction(undefined, undefined, [parameter], undefined, undefined, ts.createCall(consoleLog, undefined, [ts.createIdentifier('x')]));
-    var tapExpression = ts.createCall(ts.createIdentifier('tap'), undefined, [lambda]);
-    return lambda;
-};
-// TODO: turn all operator arguments into wrappedCallExpressions
-// TODO: determine where to place logic to choose appropriate wrapper, like single, frist, last...
-// TODO: probably also require for seperate functions for building the arguments array
-// TODO: but a single function to create the curried wrapper call.
-var argArrayToWrappedArgArray = function (args) {
-    var result = args.map(function (arg) {
-        var operator = arg.expression.getText();
-        var curried = exports.createWrappedCallExpression('singleWrapOperatorFunction', operator, [metadata_1.createMetaDataExpression(arg, operator)]);
-        var complete = ts.createCall(curried, undefined, arg.arguments);
-        arg.arguments.map(function (arg) { return console.log("arg arguments " + arg.getText() + " " + ts.SyntaxKind[arg.kind]); });
-        return complete;
-    });
+// Wrap array of pipeable operators.
+var wrapOperatorArray = function (args) {
+    var createWrapper = function (pipeOperator, last) {
+        return ts.createCall(ts.createIdentifier('singleWrapOperatorFunction'), undefined, [pipeOperator, ts.createLiteral(last)]);
+    };
+    var isLast = function (index) {
+        console.log("isLast: " + (args.length - 1 === index));
+        return args.length - 1 === index;
+    };
+    var result = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
     return ts.createNodeArray(result);
 };
 // Wrap all operators in given pipe and return expression.
@@ -44,9 +32,6 @@ exports.wrapPipeOperators = function (node) {
     if (!node.arguments.every(function (arg) { return ts.isCallExpression(arg); })) {
         throw new Error("Trying to wrap non-CallExpression! " + node.getText());
     }
-    console.log("Coming here in wrapPipeOperators with arguments:  " + node.arguments.length);
-    if (node.arguments.length === 1) {
-        node.arguments = argArrayToWrappedArgArray(node.arguments);
-    }
+    node.arguments = wrapOperatorArray(node.arguments);
     return node;
 };
