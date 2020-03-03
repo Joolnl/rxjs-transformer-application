@@ -1,62 +1,44 @@
-import { Observable, MonoTypeOperatorFunction, Operator, Subscriber } from 'rxjs';
+import { Observable, MonoTypeOperatorFunction } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { MetadataDeprecated, PipeableOperatorMetadata, ObservableMetadata } from '../transformer/metadata';
+import { PipeableOperatorMetadata, ObservableMetadata } from '../transformer/metadata';
 declare var chrome;
 
-interface Message {
-    type: string;
-    observable?: {
-        uuid: string;
-        type: string;
-        identifier: string;
-    };
-    operator?: {
-        uuid: string;
-        type: string;
-        function: string;
-        observable: string;
-    };
-    event?: {
-        data: any;
-        observable: string;
-        uuid: string;
-        index: number;
-    }
-    metadata: {
-        file: string;
-        line: number;
-    }
+interface Event<T> {
+    data: T;
+    observable: string;
+    uuid: number;
 }
 
-interface MessageDeprecated {
-    messageType: MessageType,
-    metadata: MetadataDeprecated,
-    event?: any,
-    subUuid?: string
-}
+type Payload<T> = PipeableOperatorMetadata | ObservableMetadata | Event<T>;
 
 enum MessageType {
-    SubscriptionCreation = 'SubscriptionCreation',
-    EventPassage = 'EventPassage'
+    observable = 'observable',
+    oprator = 'operator',
+    event = 'event'
+}
+
+interface Message<T> {
+    type: MessageType;
+    message: Payload<T>;
 }
 
 // Send given message to the backpage.
-const sendToBackpage = (message: MessageDeprecated): void => {
+const sendToBackpage = <T>(message: Message<T>): void => {
     chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message },
         function (response) {
             // ...
         });
 };
 
-// Create message for backpage.
-const createMessage = (messageType: MessageType, metadata: MetadataDeprecated, event?: any, subUuid?: string): MessageDeprecated => {
-    return { messageType, metadata, event, subUuid };
-};
+// Create message from given payload.
+const createPayloadMessage = <T>(message: Payload<T>, type: MessageType): Message<T> => {
+    return { type, message };
+}
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
     console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
-    const message = createMessage(MessageType.SubscriptionCreation, metadata);
+    const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
     console.log('Sent to backpage.');
     return fn(...args);
@@ -78,10 +60,16 @@ const unpack = <T>(event: T | Box<T>): { id: number, event: T } => {
 
 };
 
+const createEvent = <T>(data: T, observable: string, uuid: number): Event<T> => {
+    return { data, observable, uuid };
+}
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
     console.log(`wrapPipeableOperator ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
+    const message = createPayloadMessage(metadata, MessageType.oprator);
+    sendToBackpage(message);
+
     let id: number;
     return source$.pipe(
         map(e => unpack(e)),
@@ -90,15 +78,7 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
             return e.event
         }),
         operatorFn,
-        tap(e => console.log(`${id} ${e}`)),
+        tap(e => sendToBackpage(createPayloadMessage<T>(createEvent(e, metadata.observable, id), MessageType.event))),
         map(e => last ? e : new Box<T>(e, id))
     );
-};
-
-// Send event data to backpage.
-export const sendEventToBackpage = (metadata: MetadataDeprecated, operator: string, event: any, subUuid: string, test: number): void => {
-    console.log(`${event} after ${operator} to sub ${subUuid} own uuid ${metadata.uuid} line ${metadata.line}`);
-    console.log(`test ${test}`);
-    const message = createMessage(MessageType.EventPassage, metadata, event, subUuid);
-    sendToBackpage(message);
 };
