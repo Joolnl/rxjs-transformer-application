@@ -8,6 +8,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
+var metadata_1 = require("./metadata");
 // Returns an expression with given wrapperName wrapping given expression as argument.
 exports.createWrappedCallExpression = function (wrapperName, innerName, args) {
     var wrapIdentifier = ts.createIdentifier(wrapperName);
@@ -16,9 +17,10 @@ exports.createWrappedCallExpression = function (wrapperName, innerName, args) {
     return call;
 };
 // Wrap array of pipeable operators.
-var wrapOperatorArray = function (args) {
+var wrapPipeableOperatorArray = function (args) {
     var createWrapper = function (pipeOperator, last) {
-        return ts.createCall(ts.createIdentifier('singleWrapOperatorFunction'), undefined, [pipeOperator, ts.createLiteral(last)]);
+        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator);
+        return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
     };
     var isLast = function (index) {
         return args.length - 1 === index;
@@ -27,10 +29,10 @@ var wrapOperatorArray = function (args) {
     return ts.createNodeArray(result);
 };
 // Wrap all operators in given pipe and return expression.
-exports.wrapPipeOperators = function (node) {
+exports.wrapAllPipeableOperators = function (node) {
     if (!node.arguments.every(function (arg) { return ts.isCallExpression(arg); })) {
         throw new Error("Trying to wrap non-CallExpression! " + node.getText());
     }
-    node.arguments = wrapOperatorArray(node.arguments);
+    node.arguments = wrapPipeableOperatorArray(node.arguments);
     return node;
 };

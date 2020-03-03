@@ -1,6 +1,6 @@
 import { Observable, MonoTypeOperatorFunction, Operator, Subscriber } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { Metadata } from '../transformer/metadata';
+import { MetadataDeprecated, PipeableOperatorMetadata } from '../transformer/metadata';
 declare var chrome;
 
 interface Message {
@@ -30,7 +30,7 @@ interface Message {
 
 interface MessageDeprecated {
     messageType: MessageType,
-    metadata: Metadata,
+    metadata: MetadataDeprecated,
     event?: any,
     subUuid?: string
 }
@@ -49,12 +49,12 @@ const sendToBackpage = (message: MessageDeprecated): void => {
 };
 
 // Create message for backpage.
-const createMessage = (messageType: MessageType, metadata: Metadata, event?: any, subUuid?: string): MessageDeprecated => {
+const createMessage = (messageType: MessageType, metadata: MetadataDeprecated, event?: any, subUuid?: string): MessageDeprecated => {
     return { messageType, metadata, event, subUuid };
 };
 
 // Wrap creation operator and return it, send data to backpage.
-export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: Metadata) => (...args: T) => {
+export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: MetadataDeprecated) => (...args: T) => {
     console.log(`${metadata.uuid} ${metadata.line} ${metadata.file} ${metadata.operator} ${metadata.identifier}`);
     const message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
@@ -80,7 +80,8 @@ const unpack = <T>(event: T | Box<T>): { id: number, event: T } => {
 
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
-export const singleWrapOperatorFunction = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean) => (source$: Observable<T>) => {
+export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
+    console.log(`wrapPipeableOperator type ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
     let id: number;
     return source$.pipe(
         map(e => unpack(e)),
@@ -95,7 +96,7 @@ export const singleWrapOperatorFunction = <T>(operatorFn: MonoTypeOperatorFuncti
 };
 
 // Send event data to backpage.
-export const sendEventToBackpage = (metadata: Metadata, operator: string, event: any, subUuid: string, test: number): void => {
+export const sendEventToBackpage = (metadata: MetadataDeprecated, operator: string, event: any, subUuid: string, test: number): void => {
     console.log(`${event} after ${operator} to sub ${subUuid} own uuid ${metadata.uuid} line ${metadata.line}`);
     console.log(`test ${test}`);
     const message = createMessage(MessageType.EventPassage, metadata, event, subUuid);

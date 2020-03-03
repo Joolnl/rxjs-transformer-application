@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { createObservableMetadataExpression, createPipeableOperatorMetadataExpression } from './metadata'
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
 
@@ -11,9 +12,10 @@ export const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName
 };
 
 // Wrap array of pipeable operators.
-const wrapOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
+const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
-    return ts.createCall(ts.createIdentifier('singleWrapOperatorFunction'), undefined, [pipeOperator, ts.createLiteral(last)]);
+    const metadata = createPipeableOperatorMetadataExpression(pipeOperator);
+    return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
   };
 
   const isLast = (index: number) => {
@@ -26,12 +28,12 @@ const wrapOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<
 };
 
 // Wrap all operators in given pipe and return expression.
-export const wrapPipeOperators = (node: ts.CallExpression): ts.CallExpression => {
+export const wrapAllPipeableOperators = (node: ts.CallExpression): ts.CallExpression => {
   if (!node.arguments.every(arg => ts.isCallExpression(arg))) {
     throw new Error(`Trying to wrap non-CallExpression! ${node.getText()}`);
   }
 
-  node.arguments = wrapOperatorArray(node.arguments as ts.NodeArray<ts.CallExpression>);
+  node.arguments = wrapPipeableOperatorArray(node.arguments as ts.NodeArray<ts.CallExpression>);
 
   return node;
 };

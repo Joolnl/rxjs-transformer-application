@@ -75,7 +75,7 @@ exports.dummyTransformer = function (context) {
                 // if pipe operator, inject it.
                 if (isPipeOperator(node)) {
                     try {
-                        node = operator_wrapper_1.wrapPipeOperators(node);
+                        node = operator_wrapper_1.wrapAllPipeableOperators(node);
                     }
                     catch (e) {
                         console.log(e);
@@ -90,7 +90,7 @@ exports.dummyTransformer = function (context) {
             // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
             return foundRxJSCreationOperator
-                ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'singleWrapOperatorFunction', 'sendEventToBackpage'])
+                ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'])
                 : root;
         }
         return ts.visitNode(rootNode, visit);

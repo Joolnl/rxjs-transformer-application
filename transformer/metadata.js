@@ -20,7 +20,7 @@ var generateId = function (filename, line) {
     return uuid;
 };
 // Extract metadata from given call expression.
-exports.extractMetaData = function (expression) {
+exports.extractMetadata = function (expression) {
     var line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
     var file = expression.getSourceFile().fileName;
     var uuid = generateId(file, line);
@@ -31,10 +31,11 @@ exports.extractMetaData = function (expression) {
     }
     return { line: line, file: file, uuid: uuid, identifier: identifier };
 };
+// TODO: registering under only identifier might bug with two likely named identifiers in seperate files.
 // For Observable expression register metadata.
 exports.registerObservableMetadata = function (observable, operator) {
     try {
-        var metadata = exports.extractMetaData(observable);
+        var metadata = exports.extractMetadata(observable);
         observableMetadata.set(metadata.identifier, __assign({ operator: operator }, metadata));
     }
     catch (error) {
@@ -52,15 +53,34 @@ exports.getObservableMetadata = function (node) {
     }
     return observableMetadata.get(observableIdentifier);
 };
-// TODO: requries: observable name, observable type, uuid, file and line for observable.
 // Create metadata object literal expression from expression and operator.
 exports.createObservableMetadataExpression = function (expression, operator) {
-    var _a = exports.extractMetaData(expression), line = _a.line, file = _a.file, uuid = _a.uuid, identifier = _a.identifier;
+    var _a = exports.extractMetadata(expression), line = _a.line, file = _a.file, uuid = _a.uuid, identifier = _a.identifier;
     var uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
     var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
     var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
     var operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-    var identifierProperty = ts.createPropertyAssignment('identifier', ts.createLiteral(identifier));
-    var metaData = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty, identifierProperty]);
-    return metaData;
+    var identifierProperty = ts.createPropertyAssignment('identifier', ts.createLiteral(identifier || ''));
+    var metadata = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty, identifierProperty]);
+    return metadata;
+};
+// TODO: should contain: operator type, function body, observable uuid, file, line
+exports.createPipeableOperatorMetadataExpression = function (expression) {
+    var operator = expression.expression.getText();
+    var functionBody = expression.arguments.map(function (arg) { return arg.getText(); }).join('');
+    var observable;
+    if (ts.isCallExpression(expression.parent)) {
+        var uuid = exports.extractMetadata(expression.parent).uuid;
+        observable = uuid;
+    }
+    var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
+    console.log("operator " + operator + " functionBody " + functionBody + " observable " + observable + " file " + file + " line " + line);
+    var createProperty = function (name, value) { return ts.createPropertyAssignment(name, ts.createLiteral(value || '')); };
+    return ts.createObjectLiteral([
+        createProperty('type', operator),
+        createProperty('function', functionBody),
+        createProperty('observable', observable),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
 };

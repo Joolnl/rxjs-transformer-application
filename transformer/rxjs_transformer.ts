@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { createWrappedCallExpression, wrapPipeOperators } from './operator_wrapper';
+import { createWrappedCallExpression, wrapAllPipeableOperators } from './operator_wrapper';
 import { registerObservableMetadata, createObservableMetadataExpression } from './metadata';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
@@ -91,7 +91,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
         // if pipe operator, inject it.
         if (isPipeOperator(node)) {
           try {
-            node = wrapPipeOperators(node as ts.CallExpression);
+            node = wrapAllPipeableOperators(node as ts.CallExpression);
           } catch (e) {
             console.log(e);
           }
@@ -108,7 +108,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node);
       return foundRxJSCreationOperator
-        ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'singleWrapOperatorFunction', 'sendEventToBackpage'])
+        ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'])
         : root;
     }
 
