@@ -8,7 +8,7 @@ var MessageType;
 })(MessageType || (MessageType = {}));
 // Send given message to the backpage.
 var sendToBackpage = function (message) {
-    chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message }, function (response) {
+    chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message }, function (response) {
         // ...
     });
 };
@@ -25,6 +25,7 @@ exports.wrapCreationOperator = function (fn, metadata) { return function () {
     console.log(metadata.uuid + " " + metadata.line + " " + metadata.operator);
     var message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
+    console.log('Sent to backpage.');
     return fn.apply(void 0, args);
 }; };
 var Box = /** @class */ (function () {

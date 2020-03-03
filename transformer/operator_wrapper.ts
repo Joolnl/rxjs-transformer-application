@@ -17,7 +17,6 @@ const wrapOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<
   };
 
   const isLast = (index: number) => {
-    console.log(`isLast: ${args.length - 1 === index}`);
     return args.length - 1 === index;
   };
 

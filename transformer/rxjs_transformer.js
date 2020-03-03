@@ -35,8 +35,8 @@ var isPipeOperator = function (node) {
     return result.length ? true : false;
 };
 // Replace given callExpression with wrapper callExpression.
-var createWrapperExpression = function (expression, operator) {
-    var metaDataExpression = metadata_1.createMetaDataExpression(expression, operator);
+var createWrapCreationExpression = function (expression, operator) {
+    var metaDataExpression = metadata_1.createObservableMetadataExpression(expression, operator);
     var curriedCall = operator_wrapper_1.createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
     metadata_1.registerObservableMetadata(expression, operator);
@@ -70,7 +70,7 @@ exports.dummyTransformer = function (context) {
                 var _a = isRxJSCreationOperator(node), isCreationOperator = _a[0], operator = _a[1];
                 if (isCreationOperator) {
                     foundRxJSCreationOperator = true;
-                    return createWrapperExpression(node, operator);
+                    return createWrapCreationExpression(node, operator);
                 }
                 // if pipe operator, inject it.
                 if (isPipeOperator(node)) {
@@ -86,6 +86,7 @@ exports.dummyTransformer = function (context) {
                 }
                 return ts.visitEachChild(node, realVisit, context);
             };
+            // TODO: optimize imports
             // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
             return foundRxJSCreationOperator

@@ -1,7 +1,6 @@
 import * as ts from 'typescript';
 import { createWrappedCallExpression, wrapPipeOperators } from './operator_wrapper';
-import { getObservableMetadata, registerObservableMetadata, extractMetaData, createMetaDataExpression } from './metadata';
-import { createTestSourceFile } from './expressionFactory';
+import { registerObservableMetadata, createObservableMetadataExpression } from './metadata';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -35,8 +34,8 @@ const isPipeOperator = (node: ts.Node): boolean => {
 };
 
 // Replace given callExpression with wrapper callExpression.
-const createWrapperExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
-  const metaDataExpression = createMetaDataExpression(expression, operator);
+const createWrapCreationExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+  const metaDataExpression = createObservableMetadataExpression(expression, operator);
   const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
   const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
 
@@ -86,7 +85,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
         const [isCreationOperator, operator] = isRxJSCreationOperator(node);
         if (isCreationOperator) {
           foundRxJSCreationOperator = true;
-          return createWrapperExpression(node as ts.CallExpression, operator);
+          return createWrapCreationExpression(node as ts.CallExpression, operator);
         }
 
         // if pipe operator, inject it.
@@ -105,6 +104,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
         return ts.visitEachChild(node, realVisit, context);
       };
 
+      // TODO: optimize imports
       // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node);
       return foundRxJSCreationOperator

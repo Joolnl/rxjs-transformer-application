@@ -21,7 +21,6 @@ var wrapOperatorArray = function (args) {
         return ts.createCall(ts.createIdentifier('singleWrapOperatorFunction'), undefined, [pipeOperator, ts.createLiteral(last)]);
     };
     var isLast = function (index) {
-        console.log("isLast: " + (args.length - 1 === index));
         return args.length - 1 === index;
     };
     var result = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });

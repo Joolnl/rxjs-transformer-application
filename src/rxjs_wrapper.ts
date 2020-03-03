@@ -1,9 +1,34 @@
-import { Observable, MonoTypeOperatorFunction } from 'rxjs';
+import { Observable, MonoTypeOperatorFunction, Operator, Subscriber } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { Metadata } from '../transformer/metadata';
 declare var chrome;
 
 interface Message {
+    type: string;
+    observable?: {
+        uuid: string;
+        type: string;
+        identifier: string;
+    };
+    operator?: {
+        uuid: string;
+        type: string;
+        function: string;
+        observable: string;
+    };
+    event?: {
+        data: any;
+        observable: string;
+        uuid: string;
+        index: number;
+    }
+    metadata: {
+        file: string;
+        line: number;
+    }
+}
+
+interface MessageDeprecated {
     messageType: MessageType,
     metadata: Metadata,
     event?: any,
@@ -16,23 +41,24 @@ enum MessageType {
 }
 
 // Send given message to the backpage.
-const sendToBackpage = (message: Message): void => {
-    chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
+const sendToBackpage = (message: MessageDeprecated): void => {
+    chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message },
         function (response) {
             // ...
         });
 };
 
 // Create message for backpage.
-const createMessage = (messageType: MessageType, metadata: Metadata, event?: any, subUuid?: string): Message => {
+const createMessage = (messageType: MessageType, metadata: Metadata, event?: any, subUuid?: string): MessageDeprecated => {
     return { messageType, metadata, event, subUuid };
 };
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: Metadata) => (...args: T) => {
-    console.log(`${metadata.uuid} ${metadata.line} ${metadata.operator}`);
+    console.log(`${metadata.uuid} ${metadata.line} ${metadata.file} ${metadata.operator} ${metadata.identifier}`);
     const message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
+    console.log('Sent to backpage.');
     return fn(...args);
 };
 
@@ -51,6 +77,7 @@ const unpack = <T>(event: T | Box<T>): { id: number, event: T } => {
     }
 
 };
+
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const singleWrapOperatorFunction = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean) => (source$: Observable<T>) => {
