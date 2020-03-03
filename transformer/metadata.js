@@ -53,29 +53,35 @@ exports.getObservableMetadata = function (node) {
     }
     return observableMetadata.get(observableIdentifier);
 };
+var createProperty = function (name, value) { return ts.createPropertyAssignment(name, ts.createLiteral(value || '')); };
 // Create metadata object literal expression from expression and operator.
 exports.createObservableMetadataExpression = function (expression, operator) {
     var _a = exports.extractMetadata(expression), line = _a.line, file = _a.file, uuid = _a.uuid, identifier = _a.identifier;
-    var uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
-    var fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
-    var lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-    var operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-    var identifierProperty = ts.createPropertyAssignment('identifier', ts.createLiteral(identifier || ''));
-    var metadata = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty, identifierProperty]);
-    return metadata;
+    return ts.createObjectLiteral([
+        createProperty('uuid', uuid),
+        createProperty('type', operator),
+        createProperty('identifier', identifier),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
+    // const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
+    // const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
+    // const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
+    // const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
+    // const identifierProperty = ts.createPropertyAssignment('identifier', ts.createLiteral(identifier || ''));
+    // const metadata = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty, identifierProperty]);
+    // return metadata;
 };
 // TODO: should contain: operator type, function body, observable uuid, file, line
 exports.createPipeableOperatorMetadataExpression = function (expression) {
     var operator = expression.expression.getText();
     var functionBody = expression.arguments.map(function (arg) { return arg.getText(); }).join('');
+    var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
     var observable;
     if (ts.isCallExpression(expression.parent)) {
         var uuid = exports.extractMetadata(expression.parent).uuid;
         observable = uuid;
     }
-    var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
-    console.log("operator " + operator + " functionBody " + functionBody + " observable " + observable + " file " + file + " line " + line);
-    var createProperty = function (name, value) { return ts.createPropertyAssignment(name, ts.createLiteral(value || '')); };
     return ts.createObjectLiteral([
         createProperty('type', operator),
         createProperty('function', functionBody),

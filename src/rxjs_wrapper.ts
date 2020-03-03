@@ -1,6 +1,6 @@
 import { Observable, MonoTypeOperatorFunction, Operator, Subscriber } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { MetadataDeprecated, PipeableOperatorMetadata } from '../transformer/metadata';
+import { MetadataDeprecated, PipeableOperatorMetadata, ObservableMetadata } from '../transformer/metadata';
 declare var chrome;
 
 interface Message {
@@ -54,8 +54,8 @@ const createMessage = (messageType: MessageType, metadata: MetadataDeprecated, e
 };
 
 // Wrap creation operator and return it, send data to backpage.
-export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: MetadataDeprecated) => (...args: T) => {
-    console.log(`${metadata.uuid} ${metadata.line} ${metadata.file} ${metadata.operator} ${metadata.identifier}`);
+export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
+    console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
     const message = createMessage(MessageType.SubscriptionCreation, metadata);
     sendToBackpage(message);
     console.log('Sent to backpage.');
@@ -81,7 +81,7 @@ const unpack = <T>(event: T | Box<T>): { id: number, event: T } => {
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
-    console.log(`wrapPipeableOperator type ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
+    console.log(`wrapPipeableOperator ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
     let id: number;
     return source$.pipe(
         map(e => unpack(e)),
