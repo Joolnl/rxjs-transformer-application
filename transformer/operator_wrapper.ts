@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { createObservableMetadataExpression, createPipeableOperatorMetadataExpression } from './metadata'
+import { createPipeableOperatorMetadataExpression } from './metadata'
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
 

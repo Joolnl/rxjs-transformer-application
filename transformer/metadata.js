@@ -36,7 +36,9 @@ exports.extractMetadata = function (expression) {
 exports.registerObservableMetadata = function (observable, operator) {
     try {
         var metadata = exports.extractMetadata(observable);
-        observableMetadata.set(metadata.identifier, __assign({ operator: operator }, metadata));
+        var identifier = metadata.identifier;
+        console.log("registering observable " + metadata.identifier + " " + metadata.uuid);
+        observableMetadata.set(identifier, __assign({ type: operator }, metadata));
     }
     catch (error) {
         throw error;
@@ -64,13 +66,6 @@ exports.createObservableMetadataExpression = function (expression, operator) {
         createProperty('file', file),
         createProperty('line', line)
     ]);
-    // const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
-    // const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
-    // const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-    // const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-    // const identifierProperty = ts.createPropertyAssignment('identifier', ts.createLiteral(identifier || ''));
-    // const metadata = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty, identifierProperty]);
-    // return metadata;
 };
 // TODO: should contain: operator type, function body, observable uuid, file, line
 exports.createPipeableOperatorMetadataExpression = function (expression) {
@@ -79,8 +74,15 @@ exports.createPipeableOperatorMetadataExpression = function (expression) {
     var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
     var observable;
     if (ts.isCallExpression(expression.parent)) {
-        var uuid = exports.extractMetadata(expression.parent).uuid;
-        observable = uuid;
+        if (ts.isPropertyAccessExpression(expression.parent.expression)) {
+            var identifier = expression.parent.expression.expression.getText();
+            try {
+                observable = observableMetadata.get(identifier).uuid;
+            }
+            catch (e) {
+                observable = 'anonymous';
+            }
+        }
     }
     return ts.createObjectLiteral([
         createProperty('type', operator),

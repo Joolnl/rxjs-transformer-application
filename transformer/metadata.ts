@@ -3,7 +3,7 @@ import * as v5 from 'uuid/v5';
 
 export interface ObservableMetadata {
     uuid: string;
-    type: string;
+    type?: string;
     identifier: string;
     file: string;
     line: number;
@@ -25,7 +25,7 @@ export interface PipeableOperatorMetadata {
     line: number;
 }
 
-const observableMetadata = new Map<string, MetadataDeprecated>();
+const observableMetadata = new Map<string, ObservableMetadata>();
 
 // Generate unique id from seed: filename and line.
 const generateId = (filename: string, line: number): string => {
@@ -34,7 +34,7 @@ const generateId = (filename: string, line: number): string => {
 };
 
 // Extract metadata from given call expression.
-export const extractMetadata = (expression: ts.CallExpression): MetadataDeprecated => {
+export const extractMetadata = (expression: ts.CallExpression): ObservableMetadata => {
     const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
     const file = expression.getSourceFile().fileName;
     const uuid = generateId(file, line);
@@ -53,7 +53,9 @@ export const extractMetadata = (expression: ts.CallExpression): MetadataDeprecat
 export const registerObservableMetadata = (observable: ts.CallExpression, operator: string): void => {
     try {
         const metadata = extractMetadata(observable);
-        observableMetadata.set(metadata.identifier, { operator, ...metadata });
+        const identifier = metadata.identifier;
+        console.log(`registering observable ${metadata.identifier} ${metadata.uuid}`);
+        observableMetadata.set(identifier, { type: operator, ...metadata });
     } catch (error) {
         throw error;
     }
@@ -86,14 +88,6 @@ export const createObservableMetadataExpression = (expression: ts.CallExpression
         createProperty('file', file),
         createProperty('line', line)
     ]);
-    // const uuidProperty = ts.createPropertyAssignment('uuid', ts.createLiteral(uuid));
-    // const fileProperty = ts.createPropertyAssignment('file', ts.createLiteral(file));
-    // const lineProperty = ts.createPropertyAssignment('line', ts.createNumericLiteral(line.toString()));
-    // const operatorProperty = ts.createPropertyAssignment('operator', ts.createLiteral(operator));
-    // const identifierProperty = ts.createPropertyAssignment('identifier', ts.createLiteral(identifier || ''));
-    // const metadata = ts.createObjectLiteral([uuidProperty, fileProperty, lineProperty, operatorProperty, identifierProperty]);
-
-    // return metadata;
 };
 
 // TODO: should contain: operator type, function body, observable uuid, file, line
@@ -103,8 +97,14 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
     const { file, line } = extractMetadata(expression);
     let observable: string;
     if (ts.isCallExpression(expression.parent)) {
-        const { uuid } = extractMetadata(expression.parent);
-        observable = uuid;
+        if (ts.isPropertyAccessExpression(expression.parent.expression)) {
+            const identifier = expression.parent.expression.expression.getText();
+            try {
+                observable = observableMetadata.get(identifier).uuid;
+            } catch(e) {
+                observable = 'anonymous';
+            }
+        }
     }
 
     return ts.createObjectLiteral([

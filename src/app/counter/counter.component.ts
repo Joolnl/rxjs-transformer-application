@@ -35,10 +35,10 @@ export class CounterComponent {
 
     // test.subscribe(i => console.log(i));
     // test2.subscribe(i => console.log(`called ${i}`));
-    interval(1000).pipe(
-      map(x => 1),
-      scan((acc, curr) => acc + curr)
-    ).subscribe();
+    // interval(1000).pipe(
+    //   map(x => 1),
+    //   scan((acc, curr) => acc + curr)
+    // ).subscribe(x => console.log(x));
   }
 
   // Make two streams from both buttons, map add to 1 substract to -1, merge and scan.

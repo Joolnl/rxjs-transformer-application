@@ -40,7 +40,6 @@ export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) =
     console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
     const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
-    console.log('Sent to backpage.');
     return fn(...args);
 };
 
@@ -79,6 +78,7 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
         }),
         operatorFn,
         tap(e => sendToBackpage(createPayloadMessage<T>(createEvent(e, metadata.observable, id), MessageType.event))),
+        tap(e => console.log(`${e} ${metadata.observable} ${id}`)),
         map(e => last ? e : new Box<T>(e, id))
     );
 };
