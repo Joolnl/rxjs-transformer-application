@@ -18,13 +18,11 @@ const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.No
     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
   };
 
-  const isLast = (index: number) => {
-    return args.length - 1 === index;
-  };
+  const isLast = (index: number) => args.length - 1 === index;
 
-  const result = args.map((operator, index) => createWrapper(operator, isLast(index)));
+  const wrappedOperators = args.map((operator, index) => createWrapper(operator, isLast(index)));
 
-  return ts.createNodeArray(result);
+  return ts.createNodeArray(wrappedOperators);
 };
 
 // Wrap all operators in given pipe and return expression.

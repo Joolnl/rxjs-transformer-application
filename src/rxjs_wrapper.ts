@@ -26,7 +26,6 @@ interface Message<T> {
 const sendToBackpage = <T>(message: Message<T>): void => {
     chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message },
         function (response) {
-            // ...
         });
 };
 
@@ -49,19 +48,25 @@ class Box<T> {
 
 let simpleLastUid: number = 0;
 
+const createEvent = <T>(data: T, observable: string, uuid: number): Event<T> => {
+    return { data, observable, uuid };
+}
+
+// TODO: this could turn into a monad?
 // Unpack given box or event;
-const unpack = <T>(event: T | Box<T>): { id: number, event: T } => {
+const unpack = <T>(event: T | Box<T>, observable: string): { id: number, event: T } => {
     if (event instanceof Box) {
         return { id: event.id, event: event.value };
     } else {
-        return { id: ++simpleLastUid, event: event };
+        const id = simpleLastUid++;
+        const initialEventMessage = createPayloadMessage<T>(createEvent(event, observable, id), MessageType.event);
+        sendToBackpage(initialEventMessage);
+        return { id, event };
     }
 
 };
 
-const createEvent = <T>(data: T, observable: string, uuid: number): Event<T> => {
-    return { data, observable, uuid };
-}
+
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
@@ -71,7 +76,7 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 
     let id: number;
     return source$.pipe(
-        map(e => unpack(e)),
+        map(e => unpack(e, metadata.observable)),
         map(e => {
             id = e.id;
             return e.event

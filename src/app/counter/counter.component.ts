@@ -19,7 +19,7 @@ export class CounterComponent {
     const b = range(1, 12);
     const test2 = of(1);
 
-    const test3 = of(107107).pipe(
+    const test3 = of(107107107).pipe(
       map(x => x)
     ).subscribe(x => console.log(x));
 
@@ -32,6 +32,24 @@ export class CounterComponent {
     const test6 = of(777).pipe(
       filter(x => x > 1)
     ).subscribe(x => console.log(x));
+
+    const testIntervalAlfa = interval(1000);
+
+    testIntervalAlfa.pipe(
+      map(x => x = 1),
+      tap(x => console.log(x)),
+      filter(x => x > 2),
+      tap(x => console.log('asdasdasda')),
+      tap(() => console.log('test'))
+    );
+    
+    const testIntervalBeta = interval(500);
+
+    testIntervalBeta.pipe(
+      filter(() => false)
+    );
+
+    // testIntervalAlfa.subscribe(x => console.log(x));
 
     // test.subscribe(i => console.log(i));
     // test2.subscribe(i => console.log(`called ${i}`));
@@ -49,17 +67,10 @@ export class CounterComponent {
     add.pipe(
       tap(null),
       map(evt => 1),                          // map events from add to 1.
-      merge(substract.pipe(map(evt => -1))),  // map events from substract to -1 and merge with add stream.
+      // merge(substract.pipe(map(evt => -1))),  // map events from substract to -1 and merge with add stream.
       scan((acc, curr) => acc += curr)        // accumulate values.
     ).subscribe(i => this.counter = i);
 
-    const a = interval(1000);
-    a.pipe(
-      map(x => x = 1),
-      tap(x => console.log(x)),
-      filter(x => x > 2),
-      tap(x => console.log('asdasdasd'))
-    );
   }
 
 }
