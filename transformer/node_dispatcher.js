@@ -20,22 +20,24 @@ var isRxJSCreationOperator = function (node) {
         return [false, null];
     }
 };
-// Determine if given node is RxJS Pipe Statement.
-var isPipeStatement = function (node) {
-    if (!ts.isCallExpression(node)) {
-        return false;
-    }
+var isMethodCall = function (node, method) {
     try {
+        if (!ts.isCallExpression(node)) {
+            return false;
+        }
         var result = node.getChildren()
             .filter(function (child) { return ts.isPropertyAccessExpression(child); })
-            .filter(function (child) { return child.name.getText() === 'pipe'; });
+            .filter(function (child) { return child.name.getText() === method; });
         return result.length ? true : false;
     }
     catch (e) {
-        // console.log(e);
         return false;
     }
 };
+// Determine if given node is RxJS Pipe Statement.
+var isPipeStatement = function (node) { return isMethodCall(node, 'pipe'); };
+// Determine if given node is RxJS Subscribe Statement.
+var isSubscribeStatement = function (node) { return isMethodCall(node, 'subscribe'); };
 // Wrap operator into wrapOperator.
 var wrap = function (operator) {
     var capitalized = operator[0].toUpperCase() + operator.slice(1);

@@ -24,22 +24,27 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
     }
 };
 
-// Determine if given node is RxJS Pipe Statement.
-const isPipeStatement = (node: ts.Node): boolean => {
-    if (!ts.isCallExpression(node)) {
-        return false;
-    }
-
+const isMethodCall = (node: ts.Node, method: string): boolean => {
     try {
+        if (!ts.isCallExpression(node)) {
+            return false;
+        }
+
         const result = node.getChildren()
             .filter(child => ts.isPropertyAccessExpression(child))
-            .filter((child: ts.PropertyAccessExpression) => child.name.getText() === 'pipe');
+            .filter((child: ts.PropertyAccessExpression) => child.name.getText() === method);
+
         return result.length ? true : false;
     } catch (e) {
-        // console.log(e);
         return false;
     }
 };
+
+// Determine if given node is RxJS Pipe Statement.
+const isPipeStatement = (node: ts.Node): boolean => isMethodCall(node, 'pipe');
+
+// Determine if given node is RxJS Subscribe Statement.
+const isSubscribeStatement = (node: ts.Node): boolean => isMethodCall(node, 'subscribe');
 
 // Wrap operator into wrapOperator.
 const wrap = (operator: string): string => {
