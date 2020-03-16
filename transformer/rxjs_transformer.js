@@ -8,40 +8,40 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
-var operator_wrapper_1 = require("./operator_wrapper");
-var metadata_1 = require("./metadata");
-var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
-    'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
-// Checks if call expression is in rxjsCreationOperators array.
-var isRxJSCreationOperator = function (node) {
-    if (!ts.isCallExpression(node)) {
-        return [false, null];
-    }
-    var operator = rxjsCreationOperators
-        .filter(function (i) { return i === node.expression.getText(); }) // Filter rxjs creation operator
-        .pop(); // Return as string.
-    return operator !== undefined
-        ? [true, operator]
-        : [false, null];
-};
-// Determine if callExpression is pipe operator.
-var isPipeOperator = function (node) {
-    if (!ts.isCallExpression(node)) {
-        return false;
-    }
-    var result = node.getChildren()
-        .filter(function (child) { return ts.isPropertyAccessExpression(child); })
-        .filter(function (child) { return child.name.getText() === 'pipe'; });
-    return result.length ? true : false;
-};
-// Replace given callExpression with wrapper callExpression.
-var createWrapCreationExpression = function (expression, operator) {
-    var metaDataExpression = metadata_1.createObservableMetadataExpression(expression, operator);
-    var curriedCall = operator_wrapper_1.createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
-    var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
-    metadata_1.registerObservableMetadata(expression, operator);
-    return completeCall;
-};
+var node_dispatcher_1 = require("./node_dispatcher");
+// const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
+//   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
+// // Checks if call expression is in rxjsCreationOperators array.
+// const isRxJSCreationOperator = (node: ts.Node): [boolean, string | null] => {
+//   if (!ts.isCallExpression(node)) {
+//     return [false, null];
+//   }
+//   const operator = rxjsCreationOperators
+//     .filter(i => i === node.expression.getText())                                 // Filter rxjs creation operator
+//     .pop();                                                                       // Return as string.
+//   return operator !== undefined
+//     ? [true, operator]
+//     : [false, null];
+// };
+// // Determine if callExpression is pipe operator.
+// const isPipeOperator = (node: ts.Node): boolean => {
+//   if (!ts.isCallExpression(node)) {
+//     return false;
+//   }
+//   const result = node.getChildren()
+//     .filter(child => ts.isPropertyAccessExpression(child))
+//     // .filter((child: ts.PropertyAccessExpression) => child.name.getText() === 'pipe');
+//     .filter((child: ts.PropertyAccessExpression) => ['pipe', 'merge'].includes(child.name.getText()))
+//   return result.length ? true : false;
+// };
+// // Replace given callExpression with wrapper callExpression.
+// const createWrapCreationExpression = (expression: ts.CallExpression, operator: string): ts.CallExpression => {
+//   const metaDataExpression = createObservableMetadataExpression(expression, operator);
+//   const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
+//   const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+//   registerObservableMetadata(expression, operator);
+//   return completeCall;
+// };
 // Add import to given SourceFile.
 // format: import importname as alias from file
 var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
@@ -53,6 +53,7 @@ var addNamedImportToSourceFile = function (rootNode, importName, alias, file) {
 var addWrapperFunctionImportArray = function (rootNode, operators) {
     var file = 'src/rxjs_wrapper';
     operators
+        .filter(function (operator) { return operator !== null; })
         .map(function (operator) { return rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file); });
     return rootNode;
 };
@@ -63,35 +64,41 @@ exports.dummyTransformer = function (context) {
             console.log('\nIgnoring rxjs_wrapper.ts');
             return rootNode;
         }
-        var foundRxJSCreationOperator = false;
+        // let foundRxJSCreationOperator = false;
+        var importStatements = new Set();
         function visit(node) {
             var realVisit = function (node) {
-                // if creation operator, wrap it.
-                var _a = isRxJSCreationOperator(node), isCreationOperator = _a[0], operator = _a[1];
-                if (isCreationOperator) {
-                    foundRxJSCreationOperator = true;
-                    return createWrapCreationExpression(node, operator);
-                }
-                // if pipe operator, inject it.
-                if (isPipeOperator(node)) {
-                    try {
-                        node = operator_wrapper_1.wrapAllPipeableOperators(node);
-                    }
-                    catch (e) {
-                        console.log(e);
-                    }
-                    return node;
-                    // return createInjectedPipeExpression(node as ts.CallExpression);
-                    // return ts.visitEachChild(createInjectedPipeExpression(node as ts.CallExpression), realVisit, context);
-                }
-                return ts.visitEachChild(node, realVisit, context);
+                var _a = node_dispatcher_1.dispatchNode(node), dispatchedNode = _a[0], wrapperImport = _a[1];
+                wrapperImport && importStatements.add(wrapperImport);
+                return ts.visitEachChild(dispatchedNode, realVisit, context);
             };
+            // const realVisitDeprecated = (node: ts.Node) => {
+            //   // if creation operator, wrap it.
+            //   const [isCreationOperator, operator] = isRxJSCreationOperator(node);
+            //   if (isCreationOperator) {
+            //     foundRxJSCreationOperator = true;
+            //     return createWrapCreationExpression(node as ts.CallExpression, operator);
+            //   }
+            //   // if pipe operator, inject it.
+            //   if (isPipeOperator(node)) {
+            //     try {
+            //       node = wrapAllPipeableOperators(node as ts.CallExpression);
+            //     } catch (e) {
+            //       console.log(e);
+            //     }
+            //     return node;
+            //     // return createInjectedPipeExpression(node as ts.CallExpression);
+            //     // return ts.visitEachChild(createInjectedPipeExpression(node as ts.CallExpression), realVisit, context);
+            //   }
+            //   return ts.visitEachChild(node, realVisit, context);
+            // };
             // TODO: optimize imports
             // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
-            return foundRxJSCreationOperator
-                ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'])
-                : root;
+            return addWrapperFunctionImportArray(root, Array.from(importStatements));
+            // return foundRxJSCreationOperator
+            //   ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'])
+            //   : root;
         }
         return ts.visitNode(rootNode, visit);
     };

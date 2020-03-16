@@ -22,11 +22,9 @@ var wrapPipeableOperatorArray = function (args) {
         var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator);
         return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
     };
-    var isLast = function (index) {
-        return args.length - 1 === index;
-    };
-    var result = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
-    return ts.createNodeArray(result);
+    var isLast = function (index) { return args.length - 1 === index; };
+    var wrappedOperators = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
+    return ts.createNodeArray(wrappedOperators);
 };
 // Wrap all operators in given pipe and return expression.
 exports.wrapAllPipeableOperators = function (node) {
