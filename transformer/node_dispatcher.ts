@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { wrapAllPipeableOperators, createWrapCreationExpression } from './operator_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -11,11 +12,16 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
         return [false, null];
     }
 
-    const operator = rxjsCreationOperators
-        .filter(operator => operator === node.expression.getText())
-        .pop();
+    try {
+        const operator = rxjsCreationOperators
+            .filter(operator => operator === node.expression.getText())
+            .pop();
 
-    return operator ? [true, operator] : [false, null];
+        return operator ? [true, operator] : [false, null];
+    } catch (e) {
+        // console.log(e);
+        return [false, null];
+    }
 };
 
 // Determine if given node is RxJS Pipe Statement.
@@ -24,11 +30,15 @@ const isPipeStatement = (node: ts.Node): boolean => {
         return false;
     }
 
-    const result = node.getChildren()
-        .filter(child => ts.isPropertyAccessExpression(child))
-        .filter((child: ts.PropertyAccessExpression) => child.name.getText() === 'pipe');
-
-    return result.length ? true : false;
+    try {
+        const result = node.getChildren()
+            .filter(child => ts.isPropertyAccessExpression(child))
+            .filter((child: ts.PropertyAccessExpression) => child.name.getText() === 'pipe');
+        return result.length ? true : false;
+    } catch (e) {
+        // console.log(e);
+        return false;
+    }
 };
 
 // Wrap operator into wrapOperator.
@@ -60,15 +70,15 @@ const classify = (node: ts.Node): [NodeType, string | null] => {
 export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
     const [nodeType, importStatement] = classify(node);
 
-    nodeType !== 'UNCLASSIFIED' && console.log(`\nnodeType: ${nodeType} importStatement ${importStatement}`);
-
     switch (nodeType) {
         case 'UNCLASSIFIED':
+            // Unclassified, not transforming.
             break;
         case 'RXJS_CREATION_OPERATOR':
-            // node = null;
+            node = createWrapCreationExpression(node as ts.CallExpression);
             break;
         case 'RXJS_PIPE_OPERATOR':
+            node = wrapAllPipeableOperators(node as ts.CallExpression);
             break;
         default:
             throw new Error('Invalid node classification!');

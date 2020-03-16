@@ -9,8 +9,17 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 exports.__esModule = true;
 var ts = require("typescript");
 var metadata_1 = require("./metadata");
+// Create wrapped RxJS creation operator expression.
+exports.createWrapCreationExpression = function (expression) {
+    var operator = expression.expression.getText();
+    var metaDataExpression = metadata_1.createObservableMetadataExpression(expression, operator);
+    var curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
+    var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+    metadata_1.registerObservableMetadata(expression, operator);
+    return completeCall;
+};
 // Returns an expression with given wrapperName wrapping given expression as argument.
-exports.createWrappedCallExpression = function (wrapperName, innerName, args) {
+var createWrappedCallExpression = function (wrapperName, innerName, args) {
     var wrapIdentifier = ts.createIdentifier(wrapperName);
     var innerIdentifier = ts.createIdentifier(innerName);
     var call = ts.createCall(wrapIdentifier, undefined, __spreadArrays([innerIdentifier], args));

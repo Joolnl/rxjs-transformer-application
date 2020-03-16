@@ -8,6 +8,8 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
+// import { createWrappedCallExpression, wrapAllPipeableOperators } from './operator_wrapper';
+// import { registerObservableMetadata, createObservableMetadataExpression } from './metadata';
 var node_dispatcher_1 = require("./node_dispatcher");
 // const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
 //   'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -77,7 +79,7 @@ exports.dummyTransformer = function (context) {
             //   const [isCreationOperator, operator] = isRxJSCreationOperator(node);
             //   if (isCreationOperator) {
             //     foundRxJSCreationOperator = true;
-            //     return createWrapCreationExpression(node as ts.CallExpression, operator);
+            // return createWrapCreationExpression(node as ts.CallExpression, operator);
             //   }
             //   // if pipe operator, inject it.
             //   if (isPipeOperator(node)) {
@@ -95,7 +97,7 @@ exports.dummyTransformer = function (context) {
             // TODO: optimize imports
             // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
-            return addWrapperFunctionImportArray(root, Array.from(importStatements));
+            return addWrapperFunctionImportArray(root, __spreadArrays(['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'], Array.from(importStatements)));
             // return foundRxJSCreationOperator
             //   ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'])
             //   : root;

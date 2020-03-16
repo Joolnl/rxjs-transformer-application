@@ -1,10 +1,21 @@
 import * as ts from 'typescript';
-import { createPipeableOperatorMetadataExpression } from './metadata'
+import { createPipeableOperatorMetadataExpression, createObservableMetadataExpression, registerObservableMetadata } from './metadata'
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
 
+// Create wrapped RxJS creation operator expression.
+export const createWrapCreationExpression = (expression: ts.CallExpression): ts.CallExpression => {
+  const operator = expression.expression.getText();
+  const metaDataExpression = createObservableMetadataExpression(expression, operator);
+  const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
+  const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+
+  registerObservableMetadata(expression, operator);
+  return completeCall;
+};
+
 // Returns an expression with given wrapperName wrapping given expression as argument.
-export const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName, innerName, args) => {
+const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName, innerName, args) => {
   const wrapIdentifier = ts.createIdentifier(wrapperName);
   const innerIdentifier = ts.createIdentifier(innerName);
   const call = ts.createCall(wrapIdentifier, undefined, [innerIdentifier, ...args]);

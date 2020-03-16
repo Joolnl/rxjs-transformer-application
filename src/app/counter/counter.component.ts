@@ -13,12 +13,12 @@ export class CounterComponent {
   protected counter: number = 0;
 
   constructor() {
-    
-    const testIntervalBeta = interval(500);
 
-    testIntervalBeta.pipe(
-      filter(() => false)
-    );
+    // const testIntervalBeta = interval(500);
+
+    // testIntervalBeta.pipe(
+    //   filter(() => false)
+    // );
   }
 
   // Make two streams from both buttons, map add to 1 substract to -1, merge and scan.
@@ -27,13 +27,16 @@ export class CounterComponent {
     const substract = fromEvent(document.getElementById('minusButton'), 'click');
     const testIntervalAlfa = interval(1000);
 
-    testIntervalAlfa.pipe(
+    const piped = testIntervalAlfa.pipe(
       map(x => x = 1),
       tap(x => console.log(x)),
       filter(x => x > 2),
       tap(x => console.log('asdasdasda')),
       tap(() => console.log('test'))
     );
+
+
+    // piped.subscribe(x => console.log(x));
 
     add.pipe(
       tap(null),

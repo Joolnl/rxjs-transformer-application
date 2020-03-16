@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
-import { createWrappedCallExpression, wrapAllPipeableOperators } from './operator_wrapper';
-import { registerObservableMetadata, createObservableMetadataExpression } from './metadata';
+// import { createWrappedCallExpression, wrapAllPipeableOperators } from './operator_wrapper';
+// import { registerObservableMetadata, createObservableMetadataExpression } from './metadata';
 import { dispatchNode } from './node_dispatcher';
 
 // const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
@@ -65,7 +65,7 @@ const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: strin
   const file = 'src/rxjs_wrapper';
   operators
     .filter(operator => operator !== null)
-    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file));
+    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file))
   return rootNode;
 };
 
@@ -98,7 +98,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       //   const [isCreationOperator, operator] = isRxJSCreationOperator(node);
       //   if (isCreationOperator) {
       //     foundRxJSCreationOperator = true;
-      //     return createWrapCreationExpression(node as ts.CallExpression, operator);
+      // return createWrapCreationExpression(node as ts.CallExpression, operator);
       //   }
 
       //   // if pipe operator, inject it.
@@ -120,7 +120,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       // TODO: optimize imports
       // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node) as ts.SourceFile;
-      return addWrapperFunctionImportArray(root, Array.from(importStatements));
+      return addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage', ...Array.from(importStatements)]);
       // return foundRxJSCreationOperator
       //   ? addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'])
       //   : root;
