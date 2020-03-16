@@ -24,6 +24,9 @@ interface Message<T> {
 
 // Send given message to the backpage.
 const sendToBackpage = <T>(message: Message<T>): void => {
+    // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
+    //     function (response) {
+    //     });
     chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message },
         function (response) {
         });
@@ -36,7 +39,7 @@ const createPayloadMessage = <T>(message: Payload<T>, type: MessageType): Messag
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
-    console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
+    // console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
     const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
     return fn(...args);
@@ -70,7 +73,8 @@ const unpack = <T>(event: T | Box<T>, observable: string): { id: number, event: 
 
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
-    console.log(`wrapPipeableOperator ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
+    // console.log(`wrapPipeableOperator ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
+    console.log(`wrapPipeableOperator ${metadata.line} ${metadata.function} ${metadata.observable}`);
     const message = createPayloadMessage(metadata, MessageType.oprator);
     sendToBackpage(message);
 

@@ -28,7 +28,8 @@ const isPipeOperator = (node: ts.Node): boolean => {
 
   const result = node.getChildren()
     .filter(child => ts.isPropertyAccessExpression(child))
-    .filter((child: ts.PropertyAccessExpression) => child.name.getText() === 'pipe');
+    // .filter((child: ts.PropertyAccessExpression) => child.name.getText() === 'pipe');
+    .filter((child: ts.PropertyAccessExpression) => ['pipe', 'merge'].includes(child.name.getText()))
 
   return result.length ? true : false;
 };
