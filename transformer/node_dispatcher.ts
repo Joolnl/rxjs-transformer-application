@@ -89,7 +89,7 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
             break;
         default:
             throw new Error('Invalid node classification!');
-    };
+    }
 
     return [node, importStatement];
-}
+};

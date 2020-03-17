@@ -9,6 +9,13 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 exports.__esModule = true;
 var ts = require("typescript");
 var metadata_1 = require("./metadata");
+// Returns an expression with given wrapperName wrapping given expression as argument.
+var createWrappedCallExpression = function (wrapperName, innerName, args) {
+    var wrapIdentifier = ts.createIdentifier(wrapperName);
+    var innerIdentifier = ts.createIdentifier(innerName);
+    var call = ts.createCall(wrapIdentifier, undefined, __spreadArrays([innerIdentifier], args));
+    return call;
+};
 // Create wrapped RxJS creation operator expression.
 exports.createWrapCreationExpression = function (expression) {
     var operator = expression.expression.getText();
@@ -17,13 +24,6 @@ exports.createWrapCreationExpression = function (expression) {
     var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
     metadata_1.registerObservableMetadata(expression, operator);
     return completeCall;
-};
-// Returns an expression with given wrapperName wrapping given expression as argument.
-var createWrappedCallExpression = function (wrapperName, innerName, args) {
-    var wrapIdentifier = ts.createIdentifier(wrapperName);
-    var innerIdentifier = ts.createIdentifier(innerName);
-    var call = ts.createCall(wrapIdentifier, undefined, __spreadArrays([innerIdentifier], args));
-    return call;
 };
 // Wrap array of pipeable operators.
 var wrapPipeableOperatorArray = function (args) {
@@ -48,5 +48,6 @@ exports.wrapSubscribeMethod = function (node) {
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
     var propertyAccessExpr = node.expression;
     var source$ = propertyAccessExpr.expression;
+    metadata_1.createSubscriberMetadataExpression(node);
     return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, __spreadArrays([source$], args));
 };

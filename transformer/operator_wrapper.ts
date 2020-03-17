@@ -1,7 +1,18 @@
 import * as ts from 'typescript';
-import { createPipeableOperatorMetadataExpression, createObservableMetadataExpression, registerObservableMetadata } from './metadata'
+import {
+  createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
+  registerObservableMetadata, createSubscriberMetadataExpression
+} from './metadata';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
+
+// Returns an expression with given wrapperName wrapping given expression as argument.
+const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName: string, innerName: string, args: ts.Expression[]) => {
+  const wrapIdentifier = ts.createIdentifier(wrapperName);
+  const innerIdentifier = ts.createIdentifier(innerName);
+  const call = ts.createCall(wrapIdentifier, undefined, [innerIdentifier, ...args]);
+  return call;
+};
 
 // Create wrapped RxJS creation operator expression.
 export const createWrapCreationExpression = (expression: ts.CallExpression): ts.CallExpression => {
@@ -14,13 +25,7 @@ export const createWrapCreationExpression = (expression: ts.CallExpression): ts.
   return completeCall;
 };
 
-// Returns an expression with given wrapperName wrapping given expression as argument.
-const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName: string, innerName: string, args: ts.Expression[]) => {
-  const wrapIdentifier = ts.createIdentifier(wrapperName);
-  const innerIdentifier = ts.createIdentifier(innerName);
-  const call = ts.createCall(wrapIdentifier, undefined, [innerIdentifier, ...args]);
-  return call;
-};
+
 
 // Wrap array of pipeable operators.
 const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
@@ -52,5 +57,7 @@ export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression 
   const args = node.arguments.map(arg => arg);  // ts.NodeArray => array.
   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
   const source$ = propertyAccessExpr.expression;
+  createSubscriberMetadataExpression(node);
+
   return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, [source$, ...args]);
 };

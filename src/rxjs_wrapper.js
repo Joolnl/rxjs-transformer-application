@@ -12,8 +12,7 @@ var sendToBackpage = function (message) {
     // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
     //     function (response) {
     //     });
-    chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message }, function (response) {
-    });
+    chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message });
 };
 // Create message from given payload.
 var createPayloadMessage = function (message, type) {
@@ -88,11 +87,9 @@ exports.wrapSubscribe = function (source$, next, error, complete) {
             return complete();
         };
     }
-    if (complete)
-        return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
-    if (error)
-        return source$.subscribe(wrappedNext, wrappedError);
-    if (next)
-        return source$.subscribe(wrappedNext);
-    return source$.subscribe();
+    return source$.subscribe({
+        next: wrappedNext,
+        error: wrappedError,
+        complete: wrappedComplete
+    });
 };

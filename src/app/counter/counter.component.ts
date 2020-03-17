@@ -27,6 +27,9 @@ export class CounterComponent {
     const substract = fromEvent(document.getElementById('minusButton'), 'click');
     const testIntervalAlfa = interval(1000);
 
+    of(1).subscribe();
+    of(2).pipe(map(() => 7)).subscribe();
+
     const piped = testIntervalAlfa.pipe(
       map(x => x = 1),
       tap(x => console.log(x)),
@@ -36,7 +39,7 @@ export class CounterComponent {
     );
 
 
-    // piped.subscribe(x => console.log(x));
+    piped.subscribe(x => console.log(x));
 
     add.pipe(
       tap(null),

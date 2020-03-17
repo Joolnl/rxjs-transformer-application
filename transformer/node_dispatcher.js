@@ -11,7 +11,7 @@ var isRxJSCreationOperator = function (node) {
             return [false, null];
         }
         var operator = rxjsCreationOperators
-            .filter(function (operator) { return operator === node.expression.getText(); })
+            .filter(function (o) { return o === node.expression.getText(); })
             .pop();
         return operator ? [true, operator] : [false, null];
     }
@@ -76,6 +76,5 @@ exports.dispatchNode = function (node) {
         default:
             throw new Error('Invalid node classification!');
     }
-    ;
     return [node, importStatement];
 };

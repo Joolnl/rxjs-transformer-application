@@ -25,7 +25,33 @@ export interface PipeableOperatorMetadata {
     line: number;
 }
 
-const observableMetadata = new Map<string, ObservableMetadata>();
+export interface SubscriberMetadata {
+    observable: string;
+    file: string;
+    line: number;
+}
+
+// For storing data by identifier and file origin.
+class FileMap<T> {
+    private data: Map<string, T>;
+    constructor() {
+        this.data = new Map<string, T>();
+    }
+
+    private key = (identifier: string, file: string) => identifier + file;
+
+    get = (identifier: string, file: string) => {
+        return this.data.get(this.key(identifier, file));
+    }
+
+    set = (identifier: string, file: string, data: T) => {
+        this.data.set(this.key(identifier, file), data);
+    }
+}
+
+type PipeObservablePair = [string, string];
+const observableMap = new FileMap<ObservableMetadata>();
+const operatorMap = new FileMap<PipeObservablePair>();
 
 // Generate unique id from seed: filename and line.
 const generateId = (filename: string, line: number): string => {
@@ -55,24 +81,11 @@ export const registerObservableMetadata = (observable: ts.CallExpression, operat
         const metadata = extractMetadata(observable);
         const identifier = metadata.identifier;
         console.log(`registering observable ${metadata.identifier} ${metadata.uuid}`);
-        observableMetadata.set(identifier, { type: operator, ...metadata });
+        observableMap.set(identifier, metadata.file, {type: operator, ...metadata});
+
     } catch (error) {
         throw error;
     }
-};
-
-// Get metadata of epxressions subscribtion.
-export const getObservableMetadata = (node: ts.CallExpression): MetadataDeprecated => {
-    const observableIdentifier = node.getChildren()
-        .filter(n => ts.isPropertyAccessExpression(n))
-        .map((n: ts.PropertyAccessExpression) => n.expression.getText())
-        .pop();
-
-    if (!observableIdentifier) {
-        throw new Error('No observable identifier found in node! Possible anonymous observable?');
-    }
-
-    return observableMetadata.get(observableIdentifier);
 };
 
 const createProperty = (name: string, value: any) => ts.createPropertyAssignment(name, ts.createLiteral(value || ''));
@@ -100,11 +113,16 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
         if (ts.isPropertyAccessExpression(expression.parent.expression)) {
             const identifier = expression.parent.expression.expression.getText();
             try {
-                observable = observableMetadata.get(identifier).uuid;
+                observable = observableMap.get(identifier, file).uuid;
             } catch(e) {
                 observable = 'anonymous';
             }
         }
+    }
+
+    // TODO: if both observable and operator are not anoymous, store in operatorMap for fututre reference.
+    if (observable && observable !== 'anonymous') {
+        // operatorMap.set()
     }
 
     return ts.createObjectLiteral([
@@ -114,4 +132,19 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
         createProperty('file', file),
         createProperty('line', line)
     ]);
+};
+
+const getIdentifier = (node: ts.Expression): string => {
+    if (ts.isCallExpression(node) || ts.isPropertyAccessExpression(node)) {
+        return getIdentifier(node.expression as ts.Expression);
+    }
+    return node.getText();
+};
+
+export const createSubscriberMetadataExpression = (node: ts.CallExpression): void => {
+    const identifier = getIdentifier(node);
+    const { file, line } = extractMetadata(node);
+    const observable = observableMap.get(identifier, file);
+    const uuid = observable ? observable.uuid : 'anonymous';
+    console.log(`identifier ${identifier} observable ${uuid}`);
 };
