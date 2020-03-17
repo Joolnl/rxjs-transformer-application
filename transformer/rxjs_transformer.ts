@@ -35,7 +35,7 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       return rootNode;
     }
 
-    let importStatements: Set<string> = new Set();
+    const importStatements: Set<string> = new Set();
     function visit(node: ts.SourceFile): ts.SourceFile {
 
       const realVisit = (node: ts.Node): ts.Node => {

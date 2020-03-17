@@ -72,7 +72,6 @@ exports.createPipeableOperatorMetadataExpression = function (expression) {
     var operator = expression.expression.getText();
     var functionBody = expression.arguments.map(function (arg) { return arg.getText(); }).join('');
     var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
-    console.log("pipeable line " + line);
     var observable;
     if (ts.isCallExpression(expression.parent)) {
         if (ts.isPropertyAccessExpression(expression.parent.expression)) {

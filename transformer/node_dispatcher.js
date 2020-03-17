@@ -52,10 +52,8 @@ var classify = function (node) {
         classification = 'RXJS_CREATION_OPERATOR';
         importStatement = wrap(creationOperator);
     }
-    var foundPipeStatement = isPipeStatement(node);
-    if (foundPipeStatement) {
-        classification = 'RXJS_PIPE_OPERATOR';
-    }
+    isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
+    isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
     return [classification, importStatement];
 };
 // Transforms node if necassary, returns original or transformed node along required import statement.
@@ -70,6 +68,9 @@ exports.dispatchNode = function (node) {
             break;
         case 'RXJS_PIPE_OPERATOR':
             node = operator_wrapper_1.wrapAllPipeableOperators(node);
+            break;
+        case 'RXJS_SUBSCRIBE':
+            console.log('FOUND A SUBSCRIBE CALL MATEY!');
             break;
         default:
             throw new Error('Invalid node classification!');

@@ -95,7 +95,6 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
     const operator = expression.expression.getText();
     const functionBody = expression.arguments.map(arg => arg.getText()).join('');
     const { file, line } = extractMetadata(expression);
-    console.log(`pipeable line ${line}`);
     let observable: string;
     if (ts.isCallExpression(expression.parent)) {
         if (ts.isPropertyAccessExpression(expression.parent.expression)) {

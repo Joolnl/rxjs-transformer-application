@@ -4,7 +4,7 @@ import { wrapAllPipeableOperators, createWrapCreationExpression } from './operat
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
-type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE_OPERATOR';
+type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE_OPERATOR' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
@@ -63,10 +63,8 @@ const classify = (node: ts.Node): [NodeType, string | null] => {
         importStatement = wrap(creationOperator);
     }
 
-    const foundPipeStatement = isPipeStatement(node);
-    if (foundPipeStatement) {
-        classification = 'RXJS_PIPE_OPERATOR';
-    }
+    isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
+    isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
 
     return [classification, importStatement];
 };
@@ -84,6 +82,9 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
             break;
         case 'RXJS_PIPE_OPERATOR':
             node = wrapAllPipeableOperators(node as ts.CallExpression);
+            break;
+        case 'RXJS_SUBSCRIBE':
+            console.log('FOUND A SUBSCRIBE CALL MATEY!');
             break;
         default:
             throw new Error('Invalid node classification!');

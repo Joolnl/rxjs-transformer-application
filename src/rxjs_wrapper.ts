@@ -1,4 +1,4 @@
-import { Observable, MonoTypeOperatorFunction } from 'rxjs';
+import { Observable, MonoTypeOperatorFunction, Subscription } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { PipeableOperatorMetadata, ObservableMetadata } from '../transformer/metadata';
 declare var chrome;
@@ -70,8 +70,6 @@ const unpack = <T>(event: T | Box<T>, observable: string): { id: number, event: 
 
 };
 
-
-
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
     // console.log(`wrapPipeableOperator ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
@@ -92,3 +90,29 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
         map(e => last ? e : new Box<T>(e, id))
     );
 };
+
+type Next<T> = (data: T) => void;
+type Error<E> = (error: E) => void;
+type Complete = () => void;
+
+// TODO: kijken of de subscribe iets meer moet doen dan alleen doorgeven dat die bestaat aan de background?
+// TODO: moeten de next, error en complete methods overschreven worden, dit zou meer inzicht geven.
+// Wrap subscribe operator and return it, send metadata to backgground page.
+export const wrapSubscribe = <T, E>(next: Next<T>, error: Error<E>, complete: Complete) => (source$: Observable<T>): Subscription => {
+    const wrappedNext = (event: T) => {
+        console.log('wrapped next');
+        return next(event);
+    };
+
+    const wrappedError = (err: E) => {
+        console.log('wrapped error');
+        return error(err);
+    };
+
+    const wrappedComplete = () => {
+        console.log('wrapped complete');
+        return complete();
+    }
+
+    return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
+}
