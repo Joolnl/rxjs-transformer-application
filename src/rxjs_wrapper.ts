@@ -27,9 +27,7 @@ const sendToBackpage = <T>(message: Message<T>): void => {
     // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
     //     function (response) {
     //     });
-    chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message },
-        function (response) {
-        });
+    chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message });
 };
 
 // Create message from given payload.
@@ -50,7 +48,7 @@ class Box<T> {
     constructor(public value: T, public id: number) { }
 }
 
-let simpleLastUid: number = 0;
+let simpleLastUid = 0;
 
 const createEvent = <T>(data: T, observable: string, uuid: number): Event<T> => {
     return { data, observable, uuid };
@@ -117,8 +115,12 @@ export const wrapSubscribe = <T, E>(source$: Observable<T>, next?: Next<T>, erro
         wrappedComplete = () => {
             console.log('wrapped complete');
             return complete();
-        }
+        };
     }
 
-    return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
+    return source$.subscribe({
+        next: wrappedNext,
+        error: wrappedError,
+        complete: wrappedComplete
+    });
 };

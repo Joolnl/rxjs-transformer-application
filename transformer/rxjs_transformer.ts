@@ -21,7 +21,7 @@ const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: strin
   const file = 'src/rxjs_wrapper';
   operators
     .filter(operator => operator !== null)
-    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file))
+    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file));
   return rootNode;
 };
 
@@ -48,7 +48,8 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       // Add required imports to sourceFile after visitor pattern.
       const root = realVisit(node) as ts.SourceFile;
       // TODO: Optimise imports, now importing these three every file.
-      return addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage', 'wrapSubscribe', ...Array.from(importStatements)]);
+      return addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage', 'wrapSubscribe',
+        ...Array.from(importStatements)]);
     }
 
     return ts.visitNode(rootNode, visit);

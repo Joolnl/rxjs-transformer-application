@@ -14,7 +14,7 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
         }
 
         const operator = rxjsCreationOperators
-            .filter(operator => operator === node.expression.getText())
+            .filter(o => o === node.expression.getText())
             .pop();
 
         return operator ? [true, operator] : [false, null];
@@ -85,7 +85,7 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
             node = wrapAllPipeableOperators(node as ts.CallExpression);
             break;
         case 'RXJS_SUBSCRIBE':
-            node = wrapSubscribeMethod(node as ts.PropertyAccessExpression);
+            node = wrapSubscribeMethod(node as ts.CallExpression);
             break;
         default:
             throw new Error('Invalid node classification!');
