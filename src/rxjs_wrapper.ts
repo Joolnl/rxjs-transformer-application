@@ -120,11 +120,5 @@ export const wrapSubscribe = <T, E>(source$: Observable<T>, next?: Next<T>, erro
         }
     }
 
-    if (complete)
-        return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
-    if (error)
-        return source$.subscribe(wrappedNext, wrappedError);
-    if (next)
-        return source$.subscribe(wrappedNext);
-    return source$.subscribe();
-}
+    return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
+};
