@@ -6,10 +6,10 @@ var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer'
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 // Determine if given node is RxJS Creation Operator Statement.
 var isRxJSCreationOperator = function (node) {
-    if (!ts.isCallExpression(node)) {
-        return [false, null];
-    }
     try {
+        if (!ts.isCallExpression(node)) {
+            return [false, null];
+        }
         var operator = rxjsCreationOperators
             .filter(function (operator) { return operator === node.expression.getText(); })
             .pop();
@@ -20,6 +20,7 @@ var isRxJSCreationOperator = function (node) {
         return [false, null];
     }
 };
+// Determine if given node is given method call.
 var isMethodCall = function (node, method) {
     try {
         if (!ts.isCallExpression(node)) {
@@ -70,7 +71,7 @@ exports.dispatchNode = function (node) {
             node = operator_wrapper_1.wrapAllPipeableOperators(node);
             break;
         case 'RXJS_SUBSCRIBE':
-            console.log('FOUND A SUBSCRIBE CALL MATEY!');
+            node = operator_wrapper_1.wrapSubscribeMethod(node);
             break;
         default:
             throw new Error('Invalid node classification!');

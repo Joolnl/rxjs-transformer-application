@@ -43,3 +43,10 @@ exports.wrapAllPipeableOperators = function (node) {
     node.arguments = wrapPipeableOperatorArray(node.arguments);
     return node;
 };
+// Wrapp subscribe method and return expression.
+exports.wrapSubscribeMethod = function (node) {
+    var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
+    var propertyAccessExpr = node.expression;
+    var source$ = propertyAccessExpr.expression;
+    return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, __spreadArrays([source$], args));
+};

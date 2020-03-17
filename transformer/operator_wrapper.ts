@@ -15,7 +15,7 @@ export const createWrapCreationExpression = (expression: ts.CallExpression): ts.
 };
 
 // Returns an expression with given wrapperName wrapping given expression as argument.
-const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName, innerName, args) => {
+const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName: string, innerName: string, args: ts.Expression[]) => {
   const wrapIdentifier = ts.createIdentifier(wrapperName);
   const innerIdentifier = ts.createIdentifier(innerName);
   const call = ts.createCall(wrapIdentifier, undefined, [innerIdentifier, ...args]);
@@ -45,4 +45,12 @@ export const wrapAllPipeableOperators = (node: ts.CallExpression): ts.CallExpres
   node.arguments = wrapPipeableOperatorArray(node.arguments as ts.NodeArray<ts.CallExpression>);
 
   return node;
+};
+
+// Wrapp subscribe method and return expression.
+export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression => {
+  const args = node.arguments.map(arg => arg);  // ts.NodeArray => array.
+  const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
+  const source$ = propertyAccessExpr.expression;
+  return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, [source$, ...args]);
 };

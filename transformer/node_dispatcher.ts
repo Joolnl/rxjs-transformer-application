@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { wrapAllPipeableOperators, createWrapCreationExpression } from './operator_wrapper';
+import { wrapAllPipeableOperators, createWrapCreationExpression, wrapSubscribeMethod } from './operator_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -8,11 +8,11 @@ type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
-    if (!ts.isCallExpression(node)) {
-        return [false, null];
-    }
-
     try {
+        if (!ts.isCallExpression(node)) {
+            return [false, null];
+        }
+
         const operator = rxjsCreationOperators
             .filter(operator => operator === node.expression.getText())
             .pop();
@@ -24,6 +24,7 @@ const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
     }
 };
 
+// Determine if given node is given method call.
 const isMethodCall = (node: ts.Node, method: string): boolean => {
     try {
         if (!ts.isCallExpression(node)) {
@@ -84,7 +85,7 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
             node = wrapAllPipeableOperators(node as ts.CallExpression);
             break;
         case 'RXJS_SUBSCRIBE':
-            console.log('FOUND A SUBSCRIBE CALL MATEY!');
+            node = wrapSubscribeMethod(node as ts.PropertyAccessExpression);
             break;
         default:
             throw new Error('Invalid node classification!');

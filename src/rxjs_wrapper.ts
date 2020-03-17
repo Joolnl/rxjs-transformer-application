@@ -95,24 +95,36 @@ type Next<T> = (data: T) => void;
 type Error<E> = (error: E) => void;
 type Complete = () => void;
 
-// TODO: kijken of de subscribe iets meer moet doen dan alleen doorgeven dat die bestaat aan de background?
-// TODO: moeten de next, error en complete methods overschreven worden, dit zou meer inzicht geven.
-// Wrap subscribe operator and return it, send metadata to backgground page.
-export const wrapSubscribe = <T, E>(next: Next<T>, error: Error<E>, complete: Complete) => (source$: Observable<T>): Subscription => {
-    const wrappedNext = (event: T) => {
-        console.log('wrapped next');
-        return next(event);
-    };
+// Wrap subscribe and its optional next, error and complete arguments.
+export const wrapSubscribe = <T, E>(source$: Observable<T>, next?: Next<T>, error?: Error<E>, complete?: Complete): Subscription => {
+    let [wrappedNext, wrappedError, wrappedComplete] = [null, null, null];
 
-    const wrappedError = (err: E) => {
-        console.log('wrapped error');
-        return error(err);
-    };
-
-    const wrappedComplete = () => {
-        console.log('wrapped complete');
-        return complete();
+    if (next) {
+        wrappedNext = (event: T) => {
+            console.log('wrapped next');
+            return next(event);
+        };
     }
 
-    return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
+    if (error) {
+        wrappedError = (err: E) => {
+            console.log('wrapped error');
+            return error(err);
+        };
+    }
+
+    if (complete) {
+        wrappedComplete = () => {
+            console.log('wrapped complete');
+            return complete();
+        }
+    }
+
+    if (complete)
+        return source$.subscribe(wrappedNext, wrappedError, wrappedComplete);
+    if (error)
+        return source$.subscribe(wrappedNext, wrappedError);
+    if (next)
+        return source$.subscribe(wrappedNext);
+    return source$.subscribe();
 }

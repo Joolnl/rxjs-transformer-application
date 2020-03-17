@@ -41,7 +41,7 @@ exports.dummyTransformer = function (context) {
             // Add required imports to sourceFile after visitor pattern.
             var root = realVisit(node);
             // TODO: Optimise imports, now importing these three every file.
-            return addWrapperFunctionImportArray(root, __spreadArrays(['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage'], Array.from(importStatements)));
+            return addWrapperFunctionImportArray(root, __spreadArrays(['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage', 'wrapSubscribe'], Array.from(importStatements)));
         }
         return ts.visitNode(rootNode, visit);
     };
