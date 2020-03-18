@@ -25,8 +25,21 @@ exports.createWrapCreationExpression = function (expression) {
     metadata_1.registerObservableMetadata(expression, operator);
     return completeCall;
 };
+// // Wrap array of pipeable operators.
+// const wrapPipeableOperatorArrayDeprecated = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
+//   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
+//     const metadata = createPipeableOperatorMetadataExpression(pipeOperator);
+//     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
+//   };
+//   const isLast = (index: number) => args.length - 1 === index;
+//   const wrappedOperators = args.map((operator, index) => createWrapper(operator, isLast(index)));
+//   return ts.createNodeArray(wrappedOperators);
+// };
 // Wrap array of pipeable operators.
 var wrapPipeableOperatorArray = function (args) {
+    if (!args.every(function (operator) { return ts.isCallExpression(operator); })) {
+        throw new Error('Can not wrap pipe operators, invalid NodeArray!');
+    }
     var createWrapper = function (pipeOperator, last) {
         var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator);
         return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
@@ -35,14 +48,42 @@ var wrapPipeableOperatorArray = function (args) {
     var wrappedOperators = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
     return ts.createNodeArray(wrappedOperators);
 };
-// Wrap all operators in given pipe and return expression.
-exports.wrapAllPipeableOperators = function (node) {
-    if (!node.arguments.every(function (arg) { return ts.isCallExpression(arg); })) {
-        throw new Error("Trying to wrap non-CallExpression! " + node.getText());
+var wrapPipeOperators = function (node) {
+    if (ts.isCallExpression(node.parent)) {
+        node.parent.arguments = wrapPipeableOperatorArray(node.parent.arguments);
+        return node;
     }
-    node.arguments = wrapPipeableOperatorArray(node.arguments);
+    else {
+        throw new Error('Can not wrap pipe!');
+    }
+};
+var getPipeIdentifier = function (node) {
+    if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
+        return node.parent.parent.name.getText();
+    }
+    throw new Error('Can not find pipe identifier!');
+};
+// Wrap pipe and all it's operators.
+exports.wrapPipeStatement = function (node) {
+    node = wrapPipeOperators(node);
+    var identifier = getPipeIdentifier(node);
+    console.log(identifier + " pipe wrapped");
     return node;
 };
+exports.wrapAnonymousPipeStatement = function (node) {
+    node = wrapPipeOperators(node);
+    return node;
+};
+// // Wrap all operators in given pipe and return expression.
+// export const wrapAllPipeableOperators = (node: ts.CallExpression): ts.CallExpression => {
+//   if (!node.arguments.every(arg => ts.isCallExpression(arg))) {
+//     throw new Error(`Trying to wrap non-CallExpression! ${node.getText()}`);
+//   }
+//   // TODO: register pipe self in metadata, and create message for its creation too.
+//   registerPipeIfNotAnonymous(node);
+//   node.arguments = wrapPipeableOperatorArrayDeprecated(node.arguments as ts.NodeArray<ts.CallExpression>);
+//   return node;
+// };
 // Wrapp subscribe method and return expression.
 exports.wrapSubscribeMethod = function (node) {
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.

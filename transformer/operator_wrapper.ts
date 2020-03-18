@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
-  registerObservableMetadata, createSubscriberMetadataExpression
+  registerObservableMetadata, createSubscriberMetadataExpression, registerPipeIfNotAnonymous
 } from './metadata';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
@@ -27,8 +27,26 @@ export const createWrapCreationExpression = (expression: ts.CallExpression): ts.
 
 
 
+// // Wrap array of pipeable operators.
+// const wrapPipeableOperatorArrayDeprecated = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
+//   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
+//     const metadata = createPipeableOperatorMetadataExpression(pipeOperator);
+//     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
+//   };
+
+//   const isLast = (index: number) => args.length - 1 === index;
+
+//   const wrappedOperators = args.map((operator, index) => createWrapper(operator, isLast(index)));
+
+//   return ts.createNodeArray(wrappedOperators);
+// };
+
 // Wrap array of pipeable operators.
-const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.NodeArray<ts.Expression> => {
+const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.Expression>): ts.NodeArray<ts.Expression> => {
+  if (!args.every(operator => ts.isCallExpression(operator))) {
+    throw new Error('Can not wrap pipe operators, invalid NodeArray!');
+  }
+
   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
     const metadata = createPipeableOperatorMetadataExpression(pipeOperator);
     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
@@ -36,21 +54,53 @@ const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.CallExpression>): ts.No
 
   const isLast = (index: number) => args.length - 1 === index;
 
-  const wrappedOperators = args.map((operator, index) => createWrapper(operator, isLast(index)));
+  const wrappedOperators = args.map((operator, index) => createWrapper(operator as ts.CallExpression, isLast(index)));
 
   return ts.createNodeArray(wrappedOperators);
 };
 
-// Wrap all operators in given pipe and return expression.
-export const wrapAllPipeableOperators = (node: ts.CallExpression): ts.CallExpression => {
-  if (!node.arguments.every(arg => ts.isCallExpression(arg))) {
-    throw new Error(`Trying to wrap non-CallExpression! ${node.getText()}`);
+const wrapPipeOperators = (node: ts.PropertyAccessExpression): ts.PropertyAccessExpression => {
+  if (ts.isCallExpression(node.parent)) {
+    node.parent.arguments = wrapPipeableOperatorArray(node.parent.arguments);
+    return node;
+  } else {
+    throw new Error('Can not wrap pipe!');
   }
+};
 
-  node.arguments = wrapPipeableOperatorArray(node.arguments as ts.NodeArray<ts.CallExpression>);
+const getPipeIdentifier = (node: ts.PropertyAccessExpression): string => {
+  if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
+    return node.parent.parent.name.getText();
+  }
+  throw new Error('Can not find pipe identifier!');
+};
 
+// Wrap pipe and all it's operators.
+export const wrapPipeStatement = (node: ts.PropertyAccessExpression): ts.PropertyAccessExpression => {
+  node = wrapPipeOperators(node);
+  const identifier = getPipeIdentifier(node);
+  console.log(`${identifier} pipe wrapped`);
   return node;
 };
+
+export const wrapAnonymousPipeStatement = (node: ts.PropertyAccessExpression): ts.PropertyAccessExpression => {
+  node = wrapPipeOperators(node);
+  return node;
+};
+
+// // Wrap all operators in given pipe and return expression.
+// export const wrapAllPipeableOperators = (node: ts.CallExpression): ts.CallExpression => {
+//   if (!node.arguments.every(arg => ts.isCallExpression(arg))) {
+//     throw new Error(`Trying to wrap non-CallExpression! ${node.getText()}`);
+//   }
+
+//   // TODO: register pipe self in metadata, and create message for its creation too.
+//   registerPipeIfNotAnonymous(node);
+
+//   node.arguments = wrapPipeableOperatorArrayDeprecated(node.arguments as ts.NodeArray<ts.CallExpression>);
+
+//   return node;
+// };
 
 // Wrapp subscribe method and return expression.
 export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression => {

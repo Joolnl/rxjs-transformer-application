@@ -72,6 +72,10 @@ exports.createObservableMetadataExpression = function (expression, operator) {
         createProperty('line', line)
     ]);
 };
+exports.registerPipeIfNotAnonymous = function (expression) {
+    var identifier = getIdentifier(expression);
+    console.log("pipe idenfitied " + identifier);
+};
 // TODO: should contain: operator type, function body, observable uuid, file, line
 exports.createPipeableOperatorMetadataExpression = function (expression) {
     var operator = expression.expression.getText();
@@ -112,5 +116,6 @@ exports.createSubscriberMetadataExpression = function (node) {
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
     var observable = observableMap.get(identifier, file);
     var uuid = observable ? observable.uuid : 'anonymous';
-    console.log("identifier " + identifier + " observable " + uuid);
+    // console.log(`identifier ${identifier} observable ${uuid}`);
+    // console.log(`expression ${node.expression.getText()}`);
 };

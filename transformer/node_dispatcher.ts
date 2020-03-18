@@ -1,10 +1,14 @@
 import * as ts from 'typescript';
-import { wrapAllPipeableOperators, createWrapCreationExpression, wrapSubscribeMethod } from './operator_wrapper';
+import {
+    createWrapCreationExpression, wrapSubscribeMethod,
+    wrapPipeStatement, wrapAnonymousPipeStatement
+} from './operator_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
-type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE_OPERATOR' | 'RXJS_SUBSCRIBE';
+type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE_OPERATOR' |
+    'RXJS_PIPE_EXPR_STMT' | 'RXJS_PIPE_VAR_STMT' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
@@ -41,6 +45,15 @@ const isMethodCall = (node: ts.Node, method: string): boolean => {
     }
 };
 
+// Check if node is pipe property access expression.
+const isPipePropertyAccessExpr = (node: ts.Node): boolean => {
+    if (ts.isPropertyAccessExpression(node)) {
+        return node.name.getText() === 'pipe' ? true : false;
+    }
+
+    return false;
+};
+
 // Determine if given node is RxJS Pipe Statement.
 const isPipeStatement = (node: ts.Node): boolean => isMethodCall(node, 'pipe');
 
@@ -64,12 +77,21 @@ const classify = (node: ts.Node): [NodeType, string | null] => {
         importStatement = wrap(creationOperator);
     }
 
-    isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
+    if (isPipePropertyAccessExpr(node)) {
+        if (ts.isVariableDeclaration(node.parent.parent)) {
+            classification = 'RXJS_PIPE_VAR_STMT';
+        } else {
+            classification = 'RXJS_PIPE_EXPR_STMT';
+        }
+    }
+
+    // isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
     isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
 
     return [classification, importStatement];
 };
 
+// TODO: split RXJS_PIPE_OPERATOR in RXJS_PIPE_EXPR_STMT en RXJS_PIPE_VAR_STMT
 // Transforms node if necassary, returns original or transformed node along required import statement.
 export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
     const [nodeType, importStatement] = classify(node);
@@ -81,8 +103,14 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
         case 'RXJS_CREATION_OPERATOR':
             node = createWrapCreationExpression(node as ts.CallExpression);
             break;
-        case 'RXJS_PIPE_OPERATOR':
-            node = wrapAllPipeableOperators(node as ts.CallExpression);
+        // case 'RXJS_PIPE_OPERATOR':
+        //     node = wrapAllPipeableOperators(node as ts.CallExpression);
+        //     break;
+        case 'RXJS_PIPE_VAR_STMT':
+            node = wrapPipeStatement(node as ts.PropertyAccessExpression);
+            break;
+        case 'RXJS_PIPE_EXPR_STMT':
+            node = wrapAnonymousPipeStatement(node as ts.PropertyAccessExpression);
             break;
         case 'RXJS_SUBSCRIBE':
             node = wrapSubscribeMethod(node as ts.CallExpression);

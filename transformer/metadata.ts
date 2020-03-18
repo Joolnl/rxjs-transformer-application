@@ -81,7 +81,7 @@ export const registerObservableMetadata = (observable: ts.CallExpression, operat
         const metadata = extractMetadata(observable);
         const identifier = metadata.identifier;
         console.log(`registering observable ${metadata.identifier} ${metadata.uuid}`);
-        observableMap.set(identifier, metadata.file, {type: operator, ...metadata});
+        observableMap.set(identifier, metadata.file, { type: operator, ...metadata });
 
     } catch (error) {
         throw error;
@@ -103,6 +103,11 @@ export const createObservableMetadataExpression = (expression: ts.CallExpression
     ]);
 };
 
+export const registerPipeIfNotAnonymous = (expression: ts.CallExpression) => {
+    const identifier = getIdentifier(expression);
+    console.log(`pipe idenfitied ${identifier}`);
+}
+
 // TODO: should contain: operator type, function body, observable uuid, file, line
 export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpression): ts.ObjectLiteralExpression => {
     const operator = expression.expression.getText();
@@ -114,7 +119,7 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
             const identifier = expression.parent.expression.expression.getText();
             try {
                 observable = observableMap.get(identifier, file).uuid;
-            } catch(e) {
+            } catch (e) {
                 observable = 'anonymous';
             }
         }
@@ -146,5 +151,6 @@ export const createSubscriberMetadataExpression = (node: ts.CallExpression): voi
     const { file, line } = extractMetadata(node);
     const observable = observableMap.get(identifier, file);
     const uuid = observable ? observable.uuid : 'anonymous';
-    console.log(`identifier ${identifier} observable ${uuid}`);
+    // console.log(`identifier ${identifier} observable ${uuid}`);
+    // console.log(`expression ${node.expression.getText()}`);
 };

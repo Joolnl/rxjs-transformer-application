@@ -35,6 +35,13 @@ var isMethodCall = function (node, method) {
         return false;
     }
 };
+// Check if node is pipe property access expression.
+var isPipePropertyAccessExpr = function (node) {
+    if (ts.isPropertyAccessExpression(node)) {
+        return node.name.getText() === 'pipe' ? true : false;
+    }
+    return false;
+};
 // Determine if given node is RxJS Pipe Statement.
 var isPipeStatement = function (node) { return isMethodCall(node, 'pipe'); };
 // Determine if given node is RxJS Subscribe Statement.
@@ -53,10 +60,19 @@ var classify = function (node) {
         classification = 'RXJS_CREATION_OPERATOR';
         importStatement = wrap(creationOperator);
     }
-    isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
+    if (isPipePropertyAccessExpr(node)) {
+        if (ts.isVariableDeclaration(node.parent.parent)) {
+            classification = 'RXJS_PIPE_VAR_STMT';
+        }
+        else {
+            classification = 'RXJS_PIPE_EXPR_STMT';
+        }
+    }
+    // isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
     isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
     return [classification, importStatement];
 };
+// TODO: split RXJS_PIPE_OPERATOR in RXJS_PIPE_EXPR_STMT en RXJS_PIPE_VAR_STMT
 // Transforms node if necassary, returns original or transformed node along required import statement.
 exports.dispatchNode = function (node) {
     var _a = classify(node), nodeType = _a[0], importStatement = _a[1];
@@ -67,8 +83,14 @@ exports.dispatchNode = function (node) {
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
             break;
-        case 'RXJS_PIPE_OPERATOR':
-            node = operator_wrapper_1.wrapAllPipeableOperators(node);
+        // case 'RXJS_PIPE_OPERATOR':
+        //     node = wrapAllPipeableOperators(node as ts.CallExpression);
+        //     break;
+        case 'RXJS_PIPE_VAR_STMT':
+            node = operator_wrapper_1.wrapPipeStatement(node);
+            break;
+        case 'RXJS_PIPE_EXPR_STMT':
+            node = operator_wrapper_1.wrapAnonymousPipeStatement(node);
             break;
         case 'RXJS_SUBSCRIBE':
             node = operator_wrapper_1.wrapSubscribeMethod(node);
