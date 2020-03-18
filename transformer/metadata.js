@@ -81,6 +81,7 @@ exports.createPipeableOperatorMetadataExpression = function (expression) {
     var operator = expression.expression.getText();
     var functionBody = expression.arguments.map(function (arg) { return arg.getText(); }).join('');
     var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
+    var id = generateId(file, line);
     var observable;
     if (ts.isCallExpression(expression.parent)) {
         if (ts.isPropertyAccessExpression(expression.parent.expression)) {
@@ -93,14 +94,11 @@ exports.createPipeableOperatorMetadataExpression = function (expression) {
             }
         }
     }
-    // TODO: if both observable and operator are not anoymous, store in operatorMap for fututre reference.
-    if (observable && observable !== 'anonymous') {
-        // operatorMap.set()
-    }
     return ts.createObjectLiteral([
         createProperty('type', operator),
         createProperty('function', functionBody),
         createProperty('observable', observable),
+        createProperty('pipe', id),
         createProperty('file', file),
         createProperty('line', line)
     ]);

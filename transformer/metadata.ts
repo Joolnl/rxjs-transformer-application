@@ -21,6 +21,7 @@ export interface PipeableOperatorMetadata {
     type: string;
     function: string;
     observable: string;
+    pipe: string;
     file: string;
     line: number;
 }
@@ -113,6 +114,7 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
     const operator = expression.expression.getText();
     const functionBody = expression.arguments.map(arg => arg.getText()).join('');
     const { file, line } = extractMetadata(expression);
+    const id = generateId(file, line);
     let observable: string;
     if (ts.isCallExpression(expression.parent)) {
         if (ts.isPropertyAccessExpression(expression.parent.expression)) {
@@ -125,15 +127,11 @@ export const createPipeableOperatorMetadataExpression = (expression: ts.CallExpr
         }
     }
 
-    // TODO: if both observable and operator are not anoymous, store in operatorMap for fututre reference.
-    if (observable && observable !== 'anonymous') {
-        // operatorMap.set()
-    }
-
     return ts.createObjectLiteral([
         createProperty('type', operator),
         createProperty('function', functionBody),
         createProperty('observable', observable),
+        createProperty('pipe', id),
         createProperty('file', file),
         createProperty('line', line)
     ]);
