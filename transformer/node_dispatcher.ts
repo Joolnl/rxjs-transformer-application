@@ -7,8 +7,9 @@ import {
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
-type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE_OPERATOR' |
-    'RXJS_PIPE_EXPR_STMT' | 'RXJS_PIPE_VAR_STMT' | 'RXJS_SUBSCRIBE';
+type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_CREATION_VAR_DECL' | 'RXJS_CREATION_EXPR_STMT' |
+    'RXJS_JOIN_CREATION_OPERATOR' |
+    'RXJS_PIPE_EXPR_STMT' | 'RXJS_PIPE_VAR_DECL' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
@@ -76,7 +77,7 @@ const classify = (node: ts.Node): [NodeType, string | null] => {
 
     if (isPipePropertyAccessExpr(node)) {
         if (ts.isVariableDeclaration(node.parent.parent)) {
-            classification = 'RXJS_PIPE_VAR_STMT';
+            classification = 'RXJS_PIPE_VAR_DECL';
         } else {
             classification = 'RXJS_PIPE_EXPR_STMT';
         }
@@ -99,7 +100,11 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
         case 'RXJS_CREATION_OPERATOR':
             node = createWrapCreationExpression(node as ts.CallExpression);
             break;
-        case 'RXJS_PIPE_VAR_STMT':
+        case 'RXJS_CREATION_VAR_DECL':
+            break;
+        case 'RXJS_CREATION_EXPR_STMT':
+            break;
+        case 'RXJS_PIPE_VAR_DECL':
             node = wrapPipeStatement(node as ts.PropertyAccessExpression);
             break;
         case 'RXJS_PIPE_EXPR_STMT':

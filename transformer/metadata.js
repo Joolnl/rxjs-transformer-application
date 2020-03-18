@@ -29,7 +29,7 @@ var FileMap = /** @class */ (function () {
     return FileMap;
 }());
 var observableMap = new FileMap();
-var operatorMap = new FileMap();
+var pipeMap = new FileMap();
 // Generate unique id from seed: filename and line.
 var generateId = function (filename, line) {
     var uuid = v5("" + filename + line, 'e01462c8-517f-11ea-8d77-2e728ce88125');
@@ -72,33 +72,33 @@ exports.createObservableMetadataExpression = function (expression, operator) {
         createProperty('line', line)
     ]);
 };
-exports.registerPipeIfNotAnonymous = function (expression) {
-    var identifier = getIdentifier(expression);
-    console.log("pipe idenfitied " + identifier);
-};
-// TODO: should contain: operator type, function body, observable uuid, file, line
-exports.createPipeableOperatorMetadataExpression = function (expression) {
-    var operator = expression.expression.getText();
-    var functionBody = expression.arguments.map(function (arg) { return arg.getText(); }).join('');
-    var _a = exports.extractMetadata(expression), file = _a.file, line = _a.line;
-    var id = generateId(file, line);
-    var observable;
-    if (ts.isCallExpression(expression.parent)) {
-        if (ts.isPropertyAccessExpression(expression.parent.expression)) {
-            var identifier = expression.parent.expression.expression.getText();
-            try {
-                observable = observableMap.get(identifier, file).uuid;
-            }
-            catch (e) {
-                observable = 'anonymous';
-            }
+exports.registerPipe = function (pipeId, pipeIdentifier, node) {
+    if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
+        var file = node.getSourceFile().getText();
+        var observableIdentifier = node.parent.parent.getText();
+        var observable = observableMap.get(observableIdentifier, file);
+        if (observable) {
+            var pipeInfo = { pipeUUID: pipeId, observableUUID: observable.uuid };
+            pipeMap.set(pipeIdentifier, file, pipeInfo);
         }
+    }
+};
+// Create operator metadata object literal.
+exports.createPipeableOperatorMetadataExpression = function (node, pipeIdentifier) {
+    var operator = node.expression.getText();
+    var functionBody = node.arguments.map(function (arg) { return arg.getText(); }).join('');
+    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
+    var observable;
+    if (ts.isCallExpression(node.parent) && ts.isPropertyAccessExpression(node.parent.expression)) {
+        var identifier = node.parent.expression.expression.getText();
+        var observableObject = observableMap.get(identifier, file);
+        observable = observableObject ? observableObject.uuid : 'anonymous';
     }
     return ts.createObjectLiteral([
         createProperty('type', operator),
         createProperty('function', functionBody),
         createProperty('observable', observable),
-        createProperty('pipe', id),
+        createProperty('pipe', pipeIdentifier),
         createProperty('file', file),
         createProperty('line', line)
     ]);

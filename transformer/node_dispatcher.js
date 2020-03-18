@@ -60,7 +60,7 @@ var classify = function (node) {
     }
     if (isPipePropertyAccessExpr(node)) {
         if (ts.isVariableDeclaration(node.parent.parent)) {
-            classification = 'RXJS_PIPE_VAR_STMT';
+            classification = 'RXJS_PIPE_VAR_DECL';
         }
         else {
             classification = 'RXJS_PIPE_EXPR_STMT';
@@ -80,7 +80,11 @@ exports.dispatchNode = function (node) {
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
             break;
-        case 'RXJS_PIPE_VAR_STMT':
+        case 'RXJS_CREATION_VAR_DECL':
+            break;
+        case 'RXJS_CREATION_EXPR_STMT':
+            break;
+        case 'RXJS_PIPE_VAR_DECL':
             node = operator_wrapper_1.wrapPipeStatement(node);
             break;
         case 'RXJS_PIPE_EXPR_STMT':

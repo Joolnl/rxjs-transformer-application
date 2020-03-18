@@ -8,6 +8,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
+var uuid = require("uuid/v4");
 var metadata_1 = require("./metadata");
 // Returns an expression with given wrapperName wrapping given expression as argument.
 var createWrappedCallExpression = function (wrapperName, innerName, args) {
@@ -26,21 +27,21 @@ exports.createWrapCreationExpression = function (expression) {
     return completeCall;
 };
 // Wrap array of pipeable operators.
-var wrapPipeableOperatorArray = function (args) {
+var wrapPipeableOperatorArray = function (args, pipeIdentifier) {
     if (!args.every(function (operator) { return ts.isCallExpression(operator); })) {
         throw new Error('Can not wrap pipe operators, invalid NodeArray!');
     }
     var createWrapper = function (pipeOperator, last) {
-        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator);
+        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator, pipeIdentifier);
         return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
     };
     var isLast = function (index) { return args.length - 1 === index; };
     var wrappedOperators = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
     return ts.createNodeArray(wrappedOperators);
 };
-var wrapPipeOperators = function (node) {
+var wrapPipeOperators = function (node, pipeIdentifier) {
     if (ts.isCallExpression(node.parent)) {
-        node.parent.arguments = wrapPipeableOperatorArray(node.parent.arguments);
+        node.parent.arguments = wrapPipeableOperatorArray(node.parent.arguments, pipeIdentifier);
         return node;
     }
     else {
@@ -55,8 +56,10 @@ var getPipeIdentifier = function (node) {
 };
 // Wrap pipe and all it's operators.
 exports.wrapPipeStatement = function (node) {
-    node = wrapPipeOperators(node);
+    var pipeId = uuid();
     var identifier = getPipeIdentifier(node);
+    metadata_1.registerPipe(pipeId, identifier, node);
+    node = wrapPipeOperators(node, identifier);
     console.log(identifier + " pipe wrapped");
     return node;
 };
