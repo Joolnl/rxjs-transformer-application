@@ -54,9 +54,6 @@ const isPipePropertyAccessExpr = (node: ts.Node): boolean => {
     return false;
 };
 
-// Determine if given node is RxJS Pipe Statement.
-const isPipeStatement = (node: ts.Node): boolean => isMethodCall(node, 'pipe');
-
 // Determine if given node is RxJS Subscribe Statement.
 const isSubscribeStatement = (node: ts.Node): boolean => isMethodCall(node, 'subscribe');
 
@@ -85,7 +82,6 @@ const classify = (node: ts.Node): [NodeType, string | null] => {
         }
     }
 
-    // isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
     isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
 
     return [classification, importStatement];
@@ -103,9 +99,6 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
         case 'RXJS_CREATION_OPERATOR':
             node = createWrapCreationExpression(node as ts.CallExpression);
             break;
-        // case 'RXJS_PIPE_OPERATOR':
-        //     node = wrapAllPipeableOperators(node as ts.CallExpression);
-        //     break;
         case 'RXJS_PIPE_VAR_STMT':
             node = wrapPipeStatement(node as ts.PropertyAccessExpression);
             break;

@@ -42,8 +42,6 @@ var isPipePropertyAccessExpr = function (node) {
     }
     return false;
 };
-// Determine if given node is RxJS Pipe Statement.
-var isPipeStatement = function (node) { return isMethodCall(node, 'pipe'); };
 // Determine if given node is RxJS Subscribe Statement.
 var isSubscribeStatement = function (node) { return isMethodCall(node, 'subscribe'); };
 // Wrap operator into wrapOperator.
@@ -68,7 +66,6 @@ var classify = function (node) {
             classification = 'RXJS_PIPE_EXPR_STMT';
         }
     }
-    // isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
     isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
     return [classification, importStatement];
 };
@@ -83,9 +80,6 @@ exports.dispatchNode = function (node) {
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
             break;
-        // case 'RXJS_PIPE_OPERATOR':
-        //     node = wrapAllPipeableOperators(node as ts.CallExpression);
-        //     break;
         case 'RXJS_PIPE_VAR_STMT':
             node = operator_wrapper_1.wrapPipeStatement(node);
             break;
