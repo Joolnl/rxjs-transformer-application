@@ -13,7 +13,9 @@ type Payload<T> = PipeableOperatorMetadata | ObservableMetadata | Event<T>;
 
 enum MessageType {
     observable = 'observable',
+    pipe = 'pipe',
     oprator = 'operator',
+    subscribe = 'subscribe',
     event = 'event'
 }
 
@@ -35,15 +37,6 @@ const createPayloadMessage = <T>(message: Payload<T>, type: MessageType): Messag
     return { type, message };
 }
 
-// Wrap creation operator and return it, send data to backpage.
-export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
-    console.log('Wrapped creation operator');
-    // console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
-    const message = createPayloadMessage(metadata, MessageType.observable);
-    sendToBackpage(message);
-    return fn(...args);
-};
-
 class Box<T> {
     constructor(public value: T, public id: number) { }
 }
@@ -52,7 +45,7 @@ let simpleLastUid = 0;
 
 const createEvent = <T>(data: T, observable: string, uuid: number): Event<T> => {
     return { data, observable, uuid };
-}
+};
 
 // TODO: this could turn into a monad?
 // Unpack given box or event;
@@ -68,34 +61,40 @@ const unpack = <T>(event: T | Box<T>, observable: string): { id: number, event: 
 
 };
 
-// Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
-export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => (source$: Observable<T>) => {
-    // console.log(`wrapPipeableOperator ${metadata.file} ${metadata.function} ${metadata.line} ${metadata.observable} ${metadata.type}`);
-    console.log(`wrapPipeableOperator ${metadata.line} ${metadata.function} ${metadata.observable}`);
-    const message = createPayloadMessage(metadata, MessageType.oprator);
+// Wrap creation operator and return it, send data to backpage.
+export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
+    console.log('Wrapped creation operator');
+    // console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
+    const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
-
-    let id: number;
-    return source$.pipe(
-        map(e => unpack(e, metadata.observable)),
-        map(e => {
-            id = e.id;
-            return e.event
-        }),
-        operatorFn,
-        tap(e => sendToBackpage(createPayloadMessage<T>(createEvent(e, metadata.observable, id), MessageType.event))),
-        tap(e => console.log(`${e} ${metadata.observable} ${id}`)),
-        map(e => last ? e : new Box<T>(e, id))
-    );
+    return fn(...args);
 };
 
-export const wrapPipe = <T, R>(source$: Observable<T>, ...operators: []) => {
-    console.log('wrapped pipe!');
-    // console.log(operators);
-    // return source$.pipe.apply(operators);
-    // operators.map((_, i) => console.log(i));
-    // console.log(operators[0]);
+// Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
+export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => {
+    return (source$: Observable<T>) => {
+        console.log(`wrapPipeableOperator ${metadata.line} ${metadata.function} ${metadata.observable}`);
+        const message = createPayloadMessage(metadata, MessageType.oprator);
+        sendToBackpage(message);
 
+        let id: number;
+        return source$.pipe(
+            map(e => unpack(e, metadata.observable)),
+            map(e => {
+                id = e.id;
+                return e.event;
+            }),
+            operatorFn,
+            tap(e => sendToBackpage(createPayloadMessage<T>(createEvent(e, metadata.observable, id), MessageType.event))),
+            tap(e => console.log(`${e} ${metadata.observable} ${id}`)),
+            map(e => last ? e : new Box<T>(e, id))
+        );
+    };
+};
+
+// Wrap and return pipe statement.
+export const wrapPipe = <T>(source$: Observable<T>, ...operators: []) => {
+    console.log('wrapped pipe!');
     return source$.pipe(...operators);
 };
 
@@ -105,6 +104,7 @@ type Complete = () => void;
 
 // Wrap subscribe and its optional next, error and complete arguments.
 export const wrapSubscribe = <T, E>(source$: Observable<T>, next?: Next<T>, error?: Error<E>, complete?: Complete): Subscription => {
+    console.log('wrapped subscribe!');
     let [wrappedNext, wrappedError, wrappedComplete] = [null, null, null];
 
     if (next) {

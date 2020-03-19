@@ -29,6 +29,7 @@ export class CounterComponent {
 
     of(1).subscribe();
     of(2).pipe(map(() => 7)).subscribe();
+    of(1).pipe().subscribe();
 
     const piped = testIntervalAlfa.pipe(
       map(x => x = 1),
