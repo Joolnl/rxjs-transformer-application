@@ -37,7 +37,7 @@ const createPayloadMessage = <T>(message: Payload<T>, type: MessageType): Messag
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
-    console.log('Wrapped');
+    console.log('Wrapped creation operator');
     // console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
     const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);

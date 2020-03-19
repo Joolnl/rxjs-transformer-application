@@ -4,26 +4,21 @@ import { createWrapCreationExpression, wrapSubscribeMethod, wrapPipeStatement } 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
-type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_CREATION_VAR_DECL' | 'RXJS_CREATION_EXPR_STMT' |
-    'RXJS_JOIN_CREATION_OPERATOR' |
+type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' |
     'RXJS_PIPE_EXPR_STMT' | 'RXJS_PIPE_VAR_DECL' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
-const isRxJSCreationOperator = (node: ts.Node): [boolean, string] => {
+const isRxJSCreationOperator = (node: ts.Node): boolean => {
     try {
-        if (!ts.isCallExpression(node)) {
-            return [false, null];
+        if (ts.isCallExpression(node)) {
+            if (rxjsCreationOperators.some(operator => operator === node.expression.getText())) {
+                return true;
+            }
         }
-
-        const operator = rxjsCreationOperators
-            .filter(o => o === node.expression.getText())
-            .pop();
-
-        return operator ? [true, operator] : [false, null];
     } catch (e) {
-        // console.log(e);
-        return [false, null];
+        return false;
     }
+    return false;
 };
 
 // Determine if given node is given method call.
@@ -54,13 +49,11 @@ const isPipePropertyAccessExpr = (node: ts.Node): boolean => {
 // Determine if given node is RxJS Subscribe Statement.
 const isSubscribeStatement = (node: ts.Node): boolean => isMethodCall(node, 'subscribe');
 
-// Classify given node, return node classification and import statement.
+// Classify given node, return node classification.
 const classify = (node: ts.Node): NodeType => {
     let classification: NodeType = 'UNCLASSIFIED';
 
-    // TODO: creationOperator deprecated.
-    const [foundCreationOperator, creationOperator] = isRxJSCreationOperator(node);
-    if (foundCreationOperator) {
+    if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
     }
 
@@ -72,7 +65,9 @@ const classify = (node: ts.Node): NodeType => {
         }
     }
 
-    isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
+    if (isSubscribeStatement(node)) {
+        classification = 'RXJS_SUBSCRIBE';
+    }
 
     return classification;
 };

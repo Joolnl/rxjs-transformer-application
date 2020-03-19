@@ -7,18 +7,16 @@ var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer'
 // Determine if given node is RxJS Creation Operator Statement.
 var isRxJSCreationOperator = function (node) {
     try {
-        if (!ts.isCallExpression(node)) {
-            return [false, null];
+        if (ts.isCallExpression(node)) {
+            if (rxjsCreationOperators.some(function (operator) { return operator === node.expression.getText(); })) {
+                return true;
+            }
         }
-        var operator = rxjsCreationOperators
-            .filter(function (o) { return o === node.expression.getText(); })
-            .pop();
-        return operator ? [true, operator] : [false, null];
     }
     catch (e) {
-        // console.log(e);
-        return [false, null];
+        return false;
     }
+    return false;
 };
 // Determine if given node is given method call.
 var isMethodCall = function (node, method) {
@@ -44,12 +42,10 @@ var isPipePropertyAccessExpr = function (node) {
 };
 // Determine if given node is RxJS Subscribe Statement.
 var isSubscribeStatement = function (node) { return isMethodCall(node, 'subscribe'); };
-// Classify given node, return node classification and import statement.
+// Classify given node, return node classification.
 var classify = function (node) {
     var classification = 'UNCLASSIFIED';
-    // TODO: creationOperator deprecated.
-    var _a = isRxJSCreationOperator(node), foundCreationOperator = _a[0], creationOperator = _a[1];
-    if (foundCreationOperator) {
+    if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
     }
     if (isPipePropertyAccessExpr(node)) {
@@ -60,7 +56,9 @@ var classify = function (node) {
             classification = 'RXJS_PIPE_EXPR_STMT';
         }
     }
-    isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
+    if (isSubscribeStatement(node)) {
+        classification = 'RXJS_SUBSCRIBE';
+    }
     return classification;
 };
 // Transforms node if necassary, returns original or transformed node along required import statement.
