@@ -35,20 +35,19 @@ export const dummyTransformer = (context: ts.TransformationContext) => {
       return rootNode;
     }
 
-    const importStatements: Set<string> = new Set();
-    function visit(sourceFile: ts.SourceFile): ts.SourceFile {
+    function visitSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
+      const importStatements: Set<string> = new Set();
 
-      const realVisit = (node: ts.Node): ts.Node => {
+      const visitNodes = (node: ts.Node): ts.Node => {
         const [dispatchedNode, wrapperImport] = dispatchNode(node);
         if (wrapperImport) {
           importStatements.add(wrapperImport);
         }
 
-        return ts.visitEachChild(dispatchedNode, realVisit, context);
+        return ts.visitEachChild(dispatchedNode, visitNodes, context);
       };
 
-      // Add required imports to sourceFile after visitor pattern.
-      const root = realVisit(sourceFile) as ts.SourceFile;
+      const root = visitNodes(sourceFile) as ts.SourceFile;
 
       if (importStatements.size) { // Required by all wrapper functions.
         importStatements.add('sendEventToBackpage');
@@ -61,6 +60,6 @@ export const dummyTransformer = (context: ts.TransformationContext) => {
       return addWrapperFunctionImportArray(root, Array.from(importStatements));
     }
 
-    return ts.visitNode(rootNode, visit);
+    return ts.visitNode(rootNode, visitSourceFile);
   };
 };

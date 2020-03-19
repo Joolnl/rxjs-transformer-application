@@ -31,17 +31,16 @@ exports.dummyTransformer = function (context) {
             console.log('\nIgnoring rxjs_wrapper.ts');
             return rootNode;
         }
-        var importStatements = new Set();
-        function visit(sourceFile) {
-            var realVisit = function (node) {
+        function visitSourceFile(sourceFile) {
+            var importStatements = new Set();
+            var visitNodes = function (node) {
                 var _a = node_dispatcher_1.dispatchNode(node), dispatchedNode = _a[0], wrapperImport = _a[1];
                 if (wrapperImport) {
                     importStatements.add(wrapperImport);
                 }
-                return ts.visitEachChild(dispatchedNode, realVisit, context);
+                return ts.visitEachChild(dispatchedNode, visitNodes, context);
             };
-            // Add required imports to sourceFile after visitor pattern.
-            var root = realVisit(sourceFile);
+            var root = visitNodes(sourceFile);
             if (importStatements.size) { // Required by all wrapper functions.
                 importStatements.add('sendEventToBackpage');
             }
@@ -50,6 +49,6 @@ exports.dummyTransformer = function (context) {
             }
             return addWrapperFunctionImportArray(root, Array.from(importStatements));
         }
-        return ts.visitNode(rootNode, visit);
+        return ts.visitNode(rootNode, visitSourceFile);
     };
 };
