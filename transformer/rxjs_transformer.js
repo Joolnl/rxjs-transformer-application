@@ -32,16 +32,23 @@ exports.dummyTransformer = function (context) {
             return rootNode;
         }
         var importStatements = new Set();
-        function visit(node) {
+        function visit(sourceFile) {
             var realVisit = function (node) {
                 var _a = node_dispatcher_1.dispatchNode(node), dispatchedNode = _a[0], wrapperImport = _a[1];
-                wrapperImport && importStatements.add(wrapperImport);
+                if (wrapperImport) {
+                    importStatements.add(wrapperImport);
+                }
                 return ts.visitEachChild(dispatchedNode, realVisit, context);
             };
             // Add required imports to sourceFile after visitor pattern.
-            var root = realVisit(node);
-            // TODO: Optimise imports, now importing these three every file.
-            return addWrapperFunctionImportArray(root, __spreadArrays(['sendEventToBackpage', 'wrapPipeableOperator'], Array.from(importStatements)));
+            var root = realVisit(sourceFile);
+            if (importStatements.size) { // Required by all wrapper functions.
+                importStatements.add('sendEventToBackpage');
+            }
+            if (importStatements.has('wrapPipe')) { // Required in wrapped pipe.
+                importStatements.add('wrapPipeableOperator');
+            }
+            return addWrapperFunctionImportArray(root, Array.from(importStatements));
         }
         return ts.visitNode(rootNode, visit);
     };

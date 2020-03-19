@@ -27,7 +27,7 @@ const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: strin
 
 
 // Loops over all nodes, when node matches teststring, replaces the string literal.
-export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationContext) => {
+export const dummyTransformer = (context: ts.TransformationContext) => {
 
   return (rootNode: ts.SourceFile) => {
     if (rootNode.fileName.includes('/rxjs_wrapper.ts')) {
@@ -36,19 +36,29 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
     }
 
     const importStatements: Set<string> = new Set();
-    function visit(node: ts.SourceFile): ts.SourceFile {
+    function visit(sourceFile: ts.SourceFile): ts.SourceFile {
 
       const realVisit = (node: ts.Node): ts.Node => {
         const [dispatchedNode, wrapperImport] = dispatchNode(node);
-        wrapperImport && importStatements.add(wrapperImport);
+        if (wrapperImport) {
+          importStatements.add(wrapperImport);
+        }
 
         return ts.visitEachChild(dispatchedNode, realVisit, context);
       };
 
       // Add required imports to sourceFile after visitor pattern.
-      const root = realVisit(node) as ts.SourceFile;
-      // TODO: Optimise imports, now importing these three every file.
-      return addWrapperFunctionImportArray(root, ['sendEventToBackpage', 'wrapPipeableOperator', ...Array.from(importStatements)]);
+      const root = realVisit(sourceFile) as ts.SourceFile;
+
+      if (importStatements.size) { // Required by all wrapper functions.
+        importStatements.add('sendEventToBackpage');
+      }
+
+      if (importStatements.has('wrapPipe')) { // Required in wrapped pipe.
+        importStatements.add('wrapPipeableOperator');
+      }
+
+      return addWrapperFunctionImportArray(root, Array.from(importStatements));
     }
 
     return ts.visitNode(rootNode, visit);
