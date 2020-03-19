@@ -72,13 +72,15 @@ exports.createObservableMetadataExpression = function (expression, operator) {
         createProperty('line', line)
     ]);
 };
-exports.registerPipe = function (pipeId, pipeIdentifier, node) {
-    if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
+// Map named pipe to named observable if both non-anonymous.
+exports.registerPipe = function (pipeUUID, pipeIdentifier, node) {
+    if (ts.isVariableDeclaration(node.parent)) {
         var file = node.getSourceFile().getText();
-        var observableIdentifier = node.parent.parent.getText();
+        var observableIdentifier = node.parent.name.getText();
         var observable = observableMap.get(observableIdentifier, file);
         if (observable) {
-            var pipeInfo = { pipeUUID: pipeId, observableUUID: observable.uuid };
+            console.log('Registering pipe inside metadata');
+            var pipeInfo = { pipeUUID: pipeUUID, observableUUID: observable.uuid };
             pipeMap.set(pipeIdentifier, file, pipeInfo);
         }
     }

@@ -64,32 +64,36 @@ var wrapPipeOperators = function (node, pipeIdentifier) {
         throw new Error('Can not wrap pipe!');
     }
 };
-var getPipeIdentifier = function (node) {
+var getPipeIdentifierDeprecated = function (node) {
     if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
         return node.parent.parent.name.getText();
     }
     throw new Error('Can not find pipe identifier!');
 };
-// Wrap pipe and all it's operators.
-exports.wrapPipeStatement = function (node) {
-    // const pipeUUID = uuid();
-    // const identifier = getPipeIdentifier(node);
-    // registerPipe(pipeUUID, identifier, node);
-    // node = wrapPipeOperators(node, identifier);
-    // console.log(`${identifier} pipe wrapped`);
-    return node;
-    // const wrappedOperators = wrapPipeOperators2(node, pipeUUID);
-    // const source$ = node.expression;
-    // return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$]);
+var getPipeIdentifier = function (node) {
+    if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
+        return node.parent.name.getText();
+    }
+    throw new Error('Can not find pipe identifier!');
 };
-// TODO: can't replace property acces expression with call expression.
+// Wrap pipe and all its operators.
+exports.wrapPipeStatement = function (node) {
+    var pipeUUID = uuid();
+    var identifier = getPipeIdentifier(node);
+    metadata_1.registerPipe(pipeUUID, identifier, node);
+    var propertyAccessExpr = node.expression;
+    var source$ = propertyAccessExpr.expression;
+    node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
+    var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
+    return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$], args));
+};
+// Wrap anonymous pipe and all its operators.
 exports.wrapAnonymousPipeStatement = function (node) {
     var propertyAccessExpr = node.expression;
     var source$ = propertyAccessExpr.expression;
     node.arguments = wrapPipeableOperatorArray(node.arguments, uuid());
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
     return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$], args));
-    // return node;
 };
 // Wrapp subscribe method and return expression.
 exports.wrapSubscribeMethod = function (node) {

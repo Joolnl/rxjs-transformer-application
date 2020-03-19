@@ -74,34 +74,39 @@ const wrapPipeOperators = (node: ts.PropertyAccessExpression, pipeIdentifier?: s
   }
 };
 
-const getPipeIdentifier = (node: ts.PropertyAccessExpression): string => {
+const getPipeIdentifierDeprecated = (node: ts.PropertyAccessExpression): string => {
   if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
     return node.parent.parent.name.getText();
   }
   throw new Error('Can not find pipe identifier!');
 };
 
-// Wrap pipe and all it's operators.
-export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression => {
-  // const pipeUUID = uuid();
-  // const identifier = getPipeIdentifier(node);
-  // registerPipe(pipeUUID, identifier, node);
-  // node = wrapPipeOperators(node, identifier);
-  // console.log(`${identifier} pipe wrapped`);
-  return node;
-  // const wrappedOperators = wrapPipeOperators2(node, pipeUUID);
-  // const source$ = node.expression;
-  // return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$]);
+const getPipeIdentifier = (node: ts.CallExpression): string => {
+  if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
+    return node.parent.name.getText();
+  }
+  throw new Error('Can not find pipe identifier!');
 };
 
-// TODO: can't replace property acces expression with call expression.
+// Wrap pipe and all its operators.
+export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression => {
+  const pipeUUID = uuid();
+  const identifier = getPipeIdentifier(node);
+  registerPipe(pipeUUID, identifier, node);
+  const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
+  const source$ = propertyAccessExpr.expression;
+  node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
+  const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
+  return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, ...args]);
+};
+
+// Wrap anonymous pipe and all its operators.
 export const wrapAnonymousPipeStatement = (node: ts.CallExpression): ts.CallExpression => {
   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
   const source$ = propertyAccessExpr.expression;
   node.arguments = wrapPipeableOperatorArray(node.arguments, uuid());
   const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, ...args]);
-  // return node;
 };
 
 // Wrapp subscribe method and return expression.

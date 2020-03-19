@@ -108,13 +108,15 @@ export const createObservableMetadataExpression = (expression: ts.CallExpression
     ]);
 };
 
-export const registerPipe = (pipeId: string, pipeIdentifier: string, node: ts.PropertyAccessExpression) => {
-    if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
+// Map named pipe to named observable if both non-anonymous.
+export const registerPipe = (pipeUUID: string, pipeIdentifier: string, node: ts.CallExpression) => {
+    if (ts.isVariableDeclaration(node.parent)) {
         const file = node.getSourceFile().getText();
-        const observableIdentifier = node.parent.parent.getText();
+        const observableIdentifier = node.parent.name.getText();
         const observable = observableMap.get(observableIdentifier, file);
         if (observable) {
-            const pipeInfo = { pipeUUID: pipeId, observableUUID: observable.uuid };
+            console.log('Registering pipe inside metadata');
+            const pipeInfo = { pipeUUID, observableUUID: observable.uuid };
             pipeMap.set(pipeIdentifier, file, pipeInfo);
         }
     }
