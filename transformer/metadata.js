@@ -35,6 +35,7 @@ var generateId = function (filename, line) {
     var uuid = v5("" + filename + line, 'e01462c8-517f-11ea-8d77-2e728ce88125');
     return uuid;
 };
+// TODO: generalise function.
 // Extract metadata from given call expression.
 exports.extractMetadata = function (node) {
     var line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
@@ -84,6 +85,31 @@ exports.registerPipe = function (pipeUUID, pipeIdentifier, node) {
             pipeMap.set(pipeIdentifier, file, pipeInfo);
         }
     }
+};
+// Create pipe metadata object literal.
+exports.createPipeMetadataExpression = function (node, identifier, uuid) {
+    var _a = exports.extractMetadata(node), line = _a.line, file = _a.file;
+    var observableUUID;
+    if (ts.isPropertyAccessExpression(node.expression)) { // TODO: there might be more nodes between pipe and original observable?
+        var observableIdentifier = node.expression.expression.getText();
+        var observable = observableMap.get(observableIdentifier, file);
+        if (observable) {
+            observableUUID = observable.uuid;
+        }
+    }
+    else if (identifier) {
+        var pipeInfo = pipeMap.get(identifier, file);
+        if (pipeInfo) {
+            observableUUID = pipeInfo.observableUUID;
+        }
+    }
+    return ts.createObjectLiteral([
+        createProperty('uuid', uuid),
+        createProperty('observable', observableUUID),
+        createProperty('identifier', identifier),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
 };
 // Create operator metadata object literal.
 exports.createPipeableOperatorMetadataExpression = function (node, pipeIdentifier) {

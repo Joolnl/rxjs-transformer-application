@@ -1,6 +1,6 @@
 import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { PipeableOperatorMetadata, ObservableMetadata } from '../transformer/metadata';
+import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata } from '../transformer/metadata';
 declare var chrome;
 
 interface Event<T> {
@@ -93,8 +93,8 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 };
 
 // Wrap and return pipe statement.
-export const wrapPipe = <T>(source$: Observable<T>, ...operators: []) => {
-    console.log('wrapped pipe!');
+export const wrapPipe = <T>(source$: Observable<T>, metadata: PipeMetadata, ...operators: []) => {
+    console.log(`wrapped pipe identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
     return source$.pipe(...operators);
 };
 

@@ -48,15 +48,17 @@ var getPipeIdentifier = function (node) {
 // Wrap pipe and all its operators.
 exports.wrapPipeStatement = function (node, anonymous) {
     var pipeUUID = uuid();
+    var identifier;
     if (!anonymous) {
-        var identifier = getPipeIdentifier(node);
+        identifier = getPipeIdentifier(node);
         metadata_1.registerPipe(pipeUUID, identifier, node);
     }
+    var metadata = metadata_1.createPipeMetadataExpression(node, identifier, pipeUUID);
     var propertyAccessExpr = node.expression;
     var source$ = propertyAccessExpr.expression;
     node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
-    return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$], args));
+    return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$, metadata], args));
 };
 // Wrapp subscribe method and return expression.
 exports.wrapSubscribeMethod = function (node) {

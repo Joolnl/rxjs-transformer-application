@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import * as uuid from 'uuid/v4';
 import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
-  registerObservableMetadata, createSubscriberMetadataExpression, registerPipe
+  registerObservableMetadata, createSubscriberMetadataExpression, registerPipe, createPipeMetadataExpression
 } from './metadata';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
@@ -54,15 +54,17 @@ const getPipeIdentifier = (node: ts.CallExpression): string => {
 // Wrap pipe and all its operators.
 export const wrapPipeStatement = (node: ts.CallExpression, anonymous: boolean): ts.CallExpression => {
   const pipeUUID = uuid();
+  let identifier: string;
   if (!anonymous) {
-    const identifier = getPipeIdentifier(node);
+    identifier = getPipeIdentifier(node);
     registerPipe(pipeUUID, identifier, node);
   }
+  const metadata = createPipeMetadataExpression(node, identifier, pipeUUID);
   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
   const source$ = propertyAccessExpr.expression;
   node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
   const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
-  return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, ...args]);
+  return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadata, ...args]);
 };
 
 // Wrapp subscribe method and return expression.

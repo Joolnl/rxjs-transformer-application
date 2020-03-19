@@ -17,6 +17,14 @@ export interface MetadataDeprecated {
     operator?: string;
 }
 
+export interface PipeMetadata {
+    uuid: string;
+    observable: string;
+    identifier?: string;
+    file: string;
+    line: number;
+}
+
 export interface PipeableOperatorMetadata {
     type: string;
     function: string;
@@ -64,6 +72,7 @@ const generateId = (filename: string, line: number): string => {
     return uuid;
 };
 
+// TODO: generalise function.
 // Extract metadata from given call expression.
 export const extractMetadata = (node: ts.CallExpression): ObservableMetadata => {
     const line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
@@ -120,6 +129,32 @@ export const registerPipe = (pipeUUID: string, pipeIdentifier: string, node: ts.
             pipeMap.set(pipeIdentifier, file, pipeInfo);
         }
     }
+};
+
+// Create pipe metadata object literal.
+export const createPipeMetadataExpression = (node: ts.CallExpression, identifier: string, uuid: string): ts.ObjectLiteralExpression => {
+    const { line, file } = extractMetadata(node);
+    let observableUUID: string;
+    if (ts.isPropertyAccessExpression(node.expression)) {   // TODO: there might be more nodes between pipe and original observable?
+        const observableIdentifier = node.expression.expression.getText();
+        const observable = observableMap.get(observableIdentifier, file);
+        if (observable) {
+            observableUUID = observable.uuid;
+        }
+    } else if (identifier) {
+        const pipeInfo = pipeMap.get(identifier, file);
+        if (pipeInfo) {
+            observableUUID = pipeInfo.observableUUID;
+        }
+    }
+
+    return ts.createObjectLiteral([
+        createProperty('uuid', uuid),
+        createProperty('observable', observableUUID),
+        createProperty('identifier', identifier),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
 };
 
 // Create operator metadata object literal.
