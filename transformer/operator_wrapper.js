@@ -39,36 +39,6 @@ var wrapPipeableOperatorArray = function (args, pipeIdentifier) {
     var wrappedOperators = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
     return ts.createNodeArray(wrappedOperators);
 };
-// // TODO: clean up function.
-// const wrapPipeOperators2 = (node: ts.PropertyAccessExpression, pipeUUID: string): Array<ts.CallExpression> => {
-//   if (!ts.isCallExpression(node.parent)) {
-//     throw new Error('Can not wrap pipe operators, can not acces arguments!');
-//   }
-//   const args = node.parent.arguments;
-//   if (!args.every(operator => ts.isCallExpression(operator))) {
-//     throw new Error('Can not wrap pipe operators, invalid NodeArray!');
-//   }
-//   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
-//     const metadata = createPipeableOperatorMetadataExpression(pipeOperator, pipeUUID);
-//     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
-//   };
-//   const isLast = (index: number) => args.length - 1 === index;
-//   return args.map((operator, index) => createWrapper(operator as ts.CallExpression, isLast(index)));
-// };
-// const wrapPipeOperators = (node: ts.PropertyAccessExpression, pipeIdentifier?: string): ts.PropertyAccessExpression => {
-//   if (ts.isCallExpression(node.parent)) {
-//     node.parent.arguments = wrapPipeableOperatorArray(node.parent.arguments, pipeIdentifier);
-//     return node;
-//   } else {
-//     throw new Error('Can not wrap pipe!');
-//   }
-// };
-// const getPipeIdentifierDeprecated = (node: ts.PropertyAccessExpression): string => {
-//   if (ts.isCallExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) {
-//     return node.parent.parent.name.getText();
-//   }
-//   throw new Error('Can not find pipe identifier!');
-// };
 var getPipeIdentifier = function (node) {
     if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
         return node.parent.name.getText();
@@ -88,14 +58,6 @@ exports.wrapPipeStatement = function (node, anonymous) {
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
     return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$], args));
 };
-// // Wrap anonymous pipe and all its operators.
-// export const wrapAnonymousPipeStatement = (node: ts.CallExpression): ts.CallExpression => {
-//   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
-//   const source$ = propertyAccessExpr.expression;
-//   node.arguments = wrapPipeableOperatorArray(node.arguments, uuid());
-//   const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
-//   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, ...args]);
-// };
 // Wrapp subscribe method and return expression.
 exports.wrapSubscribeMethod = function (node) {
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
