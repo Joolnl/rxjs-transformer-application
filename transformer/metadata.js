@@ -36,13 +36,13 @@ var generateId = function (filename, line) {
     return uuid;
 };
 // Extract metadata from given call expression.
-exports.extractMetadata = function (expression) {
-    var line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
-    var file = expression.getSourceFile().fileName;
+exports.extractMetadata = function (node) {
+    var line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
+    var file = node.getSourceFile().fileName;
     var uuid = generateId(file, line);
     var identifier;
-    if (ts.isVariableDeclaration(expression.parent)) {
-        var variableDeclaration = expression.parent;
+    if (ts.isVariableDeclaration(node.parent)) {
+        var variableDeclaration = node.parent;
         identifier = variableDeclaration.name.getText();
     }
     return { line: line, file: file, uuid: uuid, identifier: identifier };

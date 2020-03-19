@@ -65,14 +65,14 @@ const generateId = (filename: string, line: number): string => {
 };
 
 // Extract metadata from given call expression.
-export const extractMetadata = (expression: ts.CallExpression): ObservableMetadata => {
-    const line = expression.getSourceFile().getLineAndCharacterOfPosition(expression.getStart()).line;
-    const file = expression.getSourceFile().fileName;
+export const extractMetadata = (node: ts.CallExpression): ObservableMetadata => {
+    const line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
+    const file = node.getSourceFile().fileName;
     const uuid = generateId(file, line);
     let identifier: string;
 
-    if (ts.isVariableDeclaration(expression.parent)) {
-        const variableDeclaration: ts.VariableDeclaration = expression.parent;
+    if (ts.isVariableDeclaration(node.parent)) {
+        const variableDeclaration: ts.VariableDeclaration = node.parent;
         identifier = variableDeclaration.name.getText();
     }
 

@@ -30,16 +30,16 @@ export class CounterComponent {
     of(1).subscribe();
     of(2).pipe(map(() => 7)).subscribe();
 
-    const piped = testIntervalAlfa.pipe(
-      map(x => x = 1),
-      tap(x => console.log(x)),
-      filter(x => x > 2),
-      tap(x => console.log('asdasdasda')),
-      tap(() => console.log('test'))
-    );
+    // const piped = testIntervalAlfa.pipe(
+    //   map(x => x = 1),
+    //   tap(x => console.log(x)),
+    //   filter(x => x > 2),
+    //   tap(x => console.log('asdasdasda')),
+    //   tap(() => console.log('test'))
+    // );
 
 
-    piped.subscribe(x => console.log(x));
+    // piped.subscribe(x => console.log(x));
 
     add.pipe(
       tap(null),

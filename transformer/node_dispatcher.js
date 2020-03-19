@@ -37,29 +37,23 @@ var isMethodCall = function (node, method) {
 };
 // Check if node is pipe property access expression.
 var isPipePropertyAccessExpr = function (node) {
-    if (ts.isPropertyAccessExpression(node)) {
-        return node.name.getText() === 'pipe' ? true : false;
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+        return node.expression.name.getText() === 'pipe' ? true : false;
     }
     return false;
 };
 // Determine if given node is RxJS Subscribe Statement.
 var isSubscribeStatement = function (node) { return isMethodCall(node, 'subscribe'); };
-// Wrap operator into wrapOperator.
-var wrap = function (operator) {
-    var capitalized = operator[0].toUpperCase() + operator.slice(1);
-    return "wrap" + capitalized;
-};
 // Classify given node, return node classification and import statement.
 var classify = function (node) {
     var classification = 'UNCLASSIFIED';
-    var importStatement = null;
+    // TODO: creationOperator deprecated.
     var _a = isRxJSCreationOperator(node), foundCreationOperator = _a[0], creationOperator = _a[1];
     if (foundCreationOperator) {
         classification = 'RXJS_CREATION_OPERATOR';
-        importStatement = wrap(creationOperator);
     }
     if (isPipePropertyAccessExpr(node)) {
-        if (ts.isVariableDeclaration(node.parent.parent)) {
+        if (ts.isVariableDeclaration(node.parent)) {
             classification = 'RXJS_PIPE_VAR_DECL';
         }
         else {
@@ -67,34 +61,27 @@ var classify = function (node) {
         }
     }
     isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
-    return [classification, importStatement];
+    return classification;
 };
-// TODO: split RXJS_PIPE_OPERATOR in RXJS_PIPE_EXPR_STMT en RXJS_PIPE_VAR_STMT
 // Transforms node if necassary, returns original or transformed node along required import statement.
 exports.dispatchNode = function (node) {
-    var _a = classify(node), nodeType = _a[0], importStatement = _a[1];
+    var nodeType = classify(node);
     switch (nodeType) {
         case 'UNCLASSIFIED':
-            // Unclassified, not transforming.
-            break;
+            return [node, null];
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
-            break;
-        case 'RXJS_CREATION_VAR_DECL':
-            break;
-        case 'RXJS_CREATION_EXPR_STMT':
-            break;
+            return [node, 'wrapCreationOperator'];
         case 'RXJS_PIPE_VAR_DECL':
             node = operator_wrapper_1.wrapPipeStatement(node);
-            break;
+            return [node, 'wrapPipe'];
         case 'RXJS_PIPE_EXPR_STMT':
             node = operator_wrapper_1.wrapAnonymousPipeStatement(node);
-            break;
+            return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
             node = operator_wrapper_1.wrapSubscribeMethod(node);
-            break;
+            return [node, 'wrapSubscribe'];
         default:
             throw new Error('Invalid node classification!');
     }
-    return [node, importStatement];
 };

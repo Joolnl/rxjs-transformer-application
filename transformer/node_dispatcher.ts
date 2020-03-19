@@ -48,35 +48,27 @@ const isMethodCall = (node: ts.Node, method: string): boolean => {
 
 // Check if node is pipe property access expression.
 const isPipePropertyAccessExpr = (node: ts.Node): boolean => {
-    if (ts.isPropertyAccessExpression(node)) {
-        return node.name.getText() === 'pipe' ? true : false;
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+        return node.expression.name.getText() === 'pipe' ? true : false;
     }
-
     return false;
 };
 
 // Determine if given node is RxJS Subscribe Statement.
 const isSubscribeStatement = (node: ts.Node): boolean => isMethodCall(node, 'subscribe');
 
-// Wrap operator into wrapOperator.
-const wrap = (operator: string): string => {
-    const capitalized = operator[0].toUpperCase() + operator.slice(1);
-    return `wrap${capitalized}`;
-};
-
 // Classify given node, return node classification and import statement.
-const classify = (node: ts.Node): [NodeType, string | null] => {
+const classify = (node: ts.Node): NodeType => {
     let classification: NodeType = 'UNCLASSIFIED';
-    let importStatement = null;
 
+    // TODO: creationOperator deprecated.
     const [foundCreationOperator, creationOperator] = isRxJSCreationOperator(node);
     if (foundCreationOperator) {
         classification = 'RXJS_CREATION_OPERATOR';
-        importStatement = wrap(creationOperator);
     }
 
     if (isPipePropertyAccessExpr(node)) {
-        if (ts.isVariableDeclaration(node.parent.parent)) {
+        if (ts.isVariableDeclaration(node.parent)) {
             classification = 'RXJS_PIPE_VAR_DECL';
         } else {
             classification = 'RXJS_PIPE_EXPR_STMT';
@@ -85,37 +77,29 @@ const classify = (node: ts.Node): [NodeType, string | null] => {
 
     isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
 
-    return [classification, importStatement];
+    return classification;
 };
 
-// TODO: split RXJS_PIPE_OPERATOR in RXJS_PIPE_EXPR_STMT en RXJS_PIPE_VAR_STMT
 // Transforms node if necassary, returns original or transformed node along required import statement.
 export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
-    const [nodeType, importStatement] = classify(node);
+    const nodeType = classify(node);
 
     switch (nodeType) {
         case 'UNCLASSIFIED':
-            // Unclassified, not transforming.
-            break;
+            return [node, null];
         case 'RXJS_CREATION_OPERATOR':
             node = createWrapCreationExpression(node as ts.CallExpression);
-            break;
-        case 'RXJS_CREATION_VAR_DECL':
-            break;
-        case 'RXJS_CREATION_EXPR_STMT':
-            break;
+            return [node, 'wrapCreationOperator'];
         case 'RXJS_PIPE_VAR_DECL':
-            node = wrapPipeStatement(node as ts.PropertyAccessExpression);
-            break;
+            node = wrapPipeStatement(node as ts.CallExpression);
+            return [node, 'wrapPipe'];
         case 'RXJS_PIPE_EXPR_STMT':
-            node = wrapAnonymousPipeStatement(node as ts.PropertyAccessExpression);
-            break;
+            node = wrapAnonymousPipeStatement(node as ts.CallExpression);
+            return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
             node = wrapSubscribeMethod(node as ts.CallExpression);
-            break;
+            return [node, 'wrapSubscribe'];
         default:
             throw new Error('Invalid node classification!');
     }
-
-    return [node, importStatement];
 };

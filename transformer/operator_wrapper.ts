@@ -44,6 +44,27 @@ const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.Expression>, pipeIdenti
   return ts.createNodeArray(wrappedOperators);
 };
 
+// TODO: clean up function.
+const wrapPipeOperators2 = (node: ts.PropertyAccessExpression, pipeUUID: string): Array<ts.CallExpression> => {
+  if (!ts.isCallExpression(node.parent)) {
+    throw new Error('Can not wrap pipe operators, can not acces arguments!');
+  }
+  const args = node.parent.arguments;
+
+  if (!args.every(operator => ts.isCallExpression(operator))) {
+    throw new Error('Can not wrap pipe operators, invalid NodeArray!');
+  }
+
+  const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
+    const metadata = createPipeableOperatorMetadataExpression(pipeOperator, pipeUUID);
+    return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
+  };
+
+  const isLast = (index: number) => args.length - 1 === index;
+
+  return args.map((operator, index) => createWrapper(operator as ts.CallExpression, isLast(index)));
+};
+
 const wrapPipeOperators = (node: ts.PropertyAccessExpression, pipeIdentifier?: string): ts.PropertyAccessExpression => {
   if (ts.isCallExpression(node.parent)) {
     node.parent.arguments = wrapPipeableOperatorArray(node.parent.arguments, pipeIdentifier);
@@ -61,18 +82,26 @@ const getPipeIdentifier = (node: ts.PropertyAccessExpression): string => {
 };
 
 // Wrap pipe and all it's operators.
-export const wrapPipeStatement = (node: ts.PropertyAccessExpression): ts.PropertyAccessExpression => {
-  const pipeId = uuid();
-  const identifier = getPipeIdentifier(node);
-  registerPipe(pipeId, identifier, node);
-  node = wrapPipeOperators(node, identifier);
-  console.log(`${identifier} pipe wrapped`);
+export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression => {
+  // const pipeUUID = uuid();
+  // const identifier = getPipeIdentifier(node);
+  // registerPipe(pipeUUID, identifier, node);
+  // node = wrapPipeOperators(node, identifier);
+  // console.log(`${identifier} pipe wrapped`);
   return node;
+  // const wrappedOperators = wrapPipeOperators2(node, pipeUUID);
+  // const source$ = node.expression;
+  // return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$]);
 };
 
-export const wrapAnonymousPipeStatement = (node: ts.PropertyAccessExpression): ts.PropertyAccessExpression => {
-  node = wrapPipeOperators(node);
-  return node;
+// TODO: can't replace property acces expression with call expression.
+export const wrapAnonymousPipeStatement = (node: ts.CallExpression): ts.CallExpression => {
+  const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
+  const source$ = propertyAccessExpr.expression;
+  node.arguments = wrapPipeableOperatorArray(node.arguments, uuid());
+  const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
+  return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, ...args]);
+  // return node;
 };
 
 // Wrapp subscribe method and return expression.

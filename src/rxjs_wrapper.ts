@@ -1,4 +1,4 @@
-import { Observable, MonoTypeOperatorFunction, Subscription } from 'rxjs';
+import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { PipeableOperatorMetadata, ObservableMetadata } from '../transformer/metadata';
 declare var chrome;
@@ -87,6 +87,16 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
         tap(e => console.log(`${e} ${metadata.observable} ${id}`)),
         map(e => last ? e : new Box<T>(e, id))
     );
+};
+
+export const wrapPipe = <T, R>(source$: Observable<T>, ...operators: []) => {
+    console.log('wrapped pipe!');
+    // console.log(operators);
+    // return source$.pipe.apply(operators);
+    // operators.map((_, i) => console.log(i));
+    // console.log(operators[0]);
+
+    return source$.pipe(...operators);
 };
 
 type Next<T> = (data: T) => void;
