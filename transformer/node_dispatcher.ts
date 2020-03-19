@@ -1,8 +1,5 @@
 import * as ts from 'typescript';
-import {
-    createWrapCreationExpression, wrapSubscribeMethod,
-    wrapPipeStatement, wrapAnonymousPipeStatement
-} from './operator_wrapper';
+import { createWrapCreationExpression, wrapSubscribeMethod, wrapPipeStatement } from './operator_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -91,10 +88,10 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
             node = createWrapCreationExpression(node as ts.CallExpression);
             return [node, 'wrapCreationOperator'];
         case 'RXJS_PIPE_VAR_DECL':
-            node = wrapPipeStatement(node as ts.CallExpression);
+            node = wrapPipeStatement(node as ts.CallExpression, false);
             return [node, 'wrapPipe'];
         case 'RXJS_PIPE_EXPR_STMT':
-            node = wrapAnonymousPipeStatement(node as ts.CallExpression);
+            node = wrapPipeStatement(node as ts.CallExpression, true);
             return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
             node = wrapSubscribeMethod(node as ts.CallExpression);

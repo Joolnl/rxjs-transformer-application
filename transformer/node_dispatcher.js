@@ -73,10 +73,10 @@ exports.dispatchNode = function (node) {
             node = operator_wrapper_1.createWrapCreationExpression(node);
             return [node, 'wrapCreationOperator'];
         case 'RXJS_PIPE_VAR_DECL':
-            node = operator_wrapper_1.wrapPipeStatement(node);
+            node = operator_wrapper_1.wrapPipeStatement(node, false);
             return [node, 'wrapPipe'];
         case 'RXJS_PIPE_EXPR_STMT':
-            node = operator_wrapper_1.wrapAnonymousPipeStatement(node);
+            node = operator_wrapper_1.wrapPipeStatement(node, true);
             return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
             node = operator_wrapper_1.wrapSubscribeMethod(node);
