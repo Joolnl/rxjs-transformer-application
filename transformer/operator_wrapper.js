@@ -52,20 +52,6 @@ exports.wrapPipeStatement = function (node) {
     var args = wrapPipeableOperatorArray(node.arguments, pipeUUID).map(function (arg) { return arg; });
     return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$, metadataExpression], args));
 };
-// export const wrapPipeStatement = (node: ts.CallExpression, anonymous: boolean): ts.CallExpression => {
-//   const pipeUUID = uuid();
-//   let identifier: string;
-//   if (!anonymous) {
-//     identifier = getPipeIdentifier(node);
-//     registerPipe(pipeUUID, identifier, node);
-//   }
-//   const metadata = createPipeMetadataExpression(node, identifier, pipeUUID);
-//   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
-//   const source$ = propertyAccessExpr.expression;
-//   node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
-// const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
-//   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadata, ...args]);
-// };
 var getPipeIdentifier = function (node) {
     if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
         return node.parent.name.getText();

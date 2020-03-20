@@ -1,8 +1,7 @@
 import * as ts from 'typescript';
-import * as uuid from 'uuid/v4';
 import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
-  createSubscriberMetadataExpression, registerPipe, createPipeMetadataExpression
+  createSubscriberMetadataExpression, createPipeMetadataExpression
 } from './metadata';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
@@ -58,20 +57,6 @@ export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression =>
   const args = wrapPipeableOperatorArray(node.arguments, pipeUUID).map(arg => arg);
   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadataExpression, ...args]);
 };
-// export const wrapPipeStatement = (node: ts.CallExpression, anonymous: boolean): ts.CallExpression => {
-//   const pipeUUID = uuid();
-//   let identifier: string;
-//   if (!anonymous) {
-//     identifier = getPipeIdentifier(node);
-//     registerPipe(pipeUUID, identifier, node);
-//   }
-//   const metadata = createPipeMetadataExpression(node, identifier, pipeUUID);
-//   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
-//   const source$ = propertyAccessExpr.expression;
-//   node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
-// const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
-//   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadata, ...args]);
-// };
 
 const getPipeIdentifier = (node: ts.CallExpression): string => {
   if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {

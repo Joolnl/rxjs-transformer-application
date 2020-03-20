@@ -42,12 +42,7 @@ var classify = function (node) {
         classification = 'RXJS_CREATION_OPERATOR';
     }
     if (isPipePropertyAccessExpr(node)) {
-        if (ts.isVariableDeclaration(node.parent)) {
-            classification = 'RXJS_PIPE_VAR_DECL';
-        }
-        else {
-            classification = 'RXJS_PIPE_EXPR_STMT';
-        }
+        classification = 'RXJS_PIPE';
     }
     if (isSubscribeStatement(node)) {
         classification = 'RXJS_SUBSCRIBE';
@@ -63,10 +58,7 @@ exports.dispatchNode = function (node) {
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
             return [node, 'wrapCreationOperator'];
-        case 'RXJS_PIPE_VAR_DECL':
-            node = operator_wrapper_1.wrapPipeStatement(node);
-            return [node, 'wrapPipe'];
-        case 'RXJS_PIPE_EXPR_STMT':
+        case 'RXJS_PIPE':
             node = operator_wrapper_1.wrapPipeStatement(node);
             return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':

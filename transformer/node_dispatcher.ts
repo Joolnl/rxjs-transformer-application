@@ -4,7 +4,7 @@ import { createWrapCreationExpression, wrapSubscribeMethod, wrapPipeStatement } 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
-type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' |
+type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE' |
     'RXJS_PIPE_EXPR_STMT' | 'RXJS_PIPE_VAR_DECL' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
@@ -52,11 +52,7 @@ const classify = (node: ts.Node): NodeType => {
     }
 
     if (isPipePropertyAccessExpr(node)) {
-        if (ts.isVariableDeclaration(node.parent)) {
-            classification = 'RXJS_PIPE_VAR_DECL';
-        } else {
-            classification = 'RXJS_PIPE_EXPR_STMT';
-        }
+        classification = 'RXJS_PIPE';
     }
 
     if (isSubscribeStatement(node)) {
@@ -76,10 +72,7 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
         case 'RXJS_CREATION_OPERATOR':
             node = createWrapCreationExpression(node as ts.CallExpression);
             return [node, 'wrapCreationOperator'];
-        case 'RXJS_PIPE_VAR_DECL':
-            node = wrapPipeStatement(node as ts.CallExpression);
-            return [node, 'wrapPipe'];
-        case 'RXJS_PIPE_EXPR_STMT':
+        case 'RXJS_PIPE':
             node = wrapPipeStatement(node as ts.CallExpression);
             return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
