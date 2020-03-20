@@ -83,7 +83,7 @@ interface PipeInfo {
 }
 
 const observableMapDeprecated = new FileMap<ObservableMetadata>();
-const pipeMap = new FileMap<PipeInfo>();
+// const pipeMap = new FileMap<PipeInfo>();
 
 // Generate unique id from seed: filename, line and pos.
 const generateId = (filename: string, line: number, pos: number): string => {
@@ -96,7 +96,7 @@ export const extractMetadata = (node: ts.Expression): { file: string, line: numb
     const file = node.getSourceFile().fileName;
     const line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
     const pos = node.pos;
-    return { file, line, pos};
+    return { file, line, pos };
 };
 
 const createProperty = (name: string, value: any) => ts.createPropertyAssignment(name, ts.createLiteral(value || ''));
@@ -115,19 +115,19 @@ export const createObservableMetadataExpression = (node: ts.Identifier, variable
     ]);
 };
 
-// Map named pipe to named observable if both non-anonymous.
-export const registerPipe = (pipeUUID: string, pipeIdentifier: string, node: ts.CallExpression) => {
-    if (ts.isVariableDeclaration(node.parent)) {
-        const file = node.getSourceFile().getText();
-        const observableIdentifier = node.parent.name.getText();
-        const observable = observableMapDeprecated.get(observableIdentifier, file);
-        if (observable) {
-            console.log('Registering pipe inside metadata');
-            const pipeInfo = { pipeUUID, observableUUID: observable.uuid };
-            pipeMap.set(pipeIdentifier, file, pipeInfo);
-        }
-    }
-};
+// // Map named pipe to named observable if both non-anonymous.
+// export const registerPipe = (pipeUUID: string, pipeIdentifier: string, node: ts.CallExpression) => {
+//     if (ts.isVariableDeclaration(node.parent)) {
+//         const file = node.getSourceFile().getText();
+//         const observableIdentifier = node.parent.name.getText();
+//         const observable = observableMapDeprecated.get(observableIdentifier, file);
+//         if (observable) {
+//             console.log('Registering pipe inside metadata');
+//             const pipeInfo = { pipeUUID, observableUUID: observable.uuid };
+//             pipeMap.set(pipeIdentifier, file, pipeInfo);
+//         }
+//     }
+// };
 
 // Traverse tree until observable is found.
 const getObservable = (node: ts.Expression): ts.Identifier => {
@@ -141,34 +141,56 @@ const getObservable = (node: ts.Expression): ts.Identifier => {
 };
 
 // Create pipe metadata object literal.
-export const createPipeMetadataExpression = (node: ts.CallExpression, identifier: string, uuid: string): ts.ObjectLiteralExpression => {
-    const { line, file } = extractMetadata(node);
-    const { file: observableFile, line: observableLine, pos: observablePos } = extractMetadata(getObservable(node).parent as ts.CallExpression);
-    const observable = generateId(observableFile, observableLine, observablePos);
-    console.log(`observable ${observable}`);
+export const createPipeMetadataExpression = (
+    node: ts.CallExpression,
+    identifier: ts.Identifier,
+    variableName: string
+): [ts.ObjectLiteralExpression, string] => {
+    const { file, line, pos } = extractMetadata(identifier);
+    const uuid = generateId(file, line, pos);
+    const observableMetadata = extractMetadata(getObservable(node));
+    const observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
 
-    let observableUUID: string;
-    if (ts.isPropertyAccessExpression(node.expression)) {   // TODO: there might be more nodes between pipe and original observable?
-        const observableIdentifier = node.expression.expression.getText();
-        const observable = observableMapDeprecated.get(observableIdentifier, file);
-        if (observable) {
-            observableUUID = observable.uuid;
-        }
-    } else if (identifier) {
-        const pipeInfo = pipeMap.get(identifier, file);
-        if (pipeInfo) {
-            observableUUID = pipeInfo.observableUUID;
-        }
-    }
-
-    return ts.createObjectLiteral([
+    const objectLiteral = ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('observable', observableUUID),
-        createProperty('identifier', identifier),
+        createProperty('identifier', variableName),
         createProperty('file', file),
         createProperty('line', line)
     ]);
+
+    return [objectLiteral, uuid];
 };
+
+
+// export const createPipeMetadataExpressionDeprecated = (node: ts.CallExpression, identifier: string, uuid: string): ts.ObjectLiteralExpression => {
+//     const { line, file } = extractMetadata(node);
+//     const { file: observableFile, line: observableLine, pos: observablePos } = extractMetadata(getObservable(node).parent as ts.CallExpression);
+//     const observable = generateId(observableFile, observableLine, observablePos);
+//     console.log(`observable ${observable}`);
+
+//     let observableUUID: string;
+//     if (ts.isPropertyAccessExpression(node.expression)) {   // TODO: there might be more nodes between pipe and original observable?
+//         const observableIdentifier = node.expression.expression.getText();
+//         const observable = observableMapDeprecated.get(observableIdentifier, file);
+//         if (observable) {
+//             observableUUID = observable.uuid;
+//         }
+//     } else if (identifier) {
+//         const pipeInfo = pipeMap.get(identifier, file);
+//         if (pipeInfo) {
+//             observableUUID = pipeInfo.observableUUID;
+//         }
+//     }
+
+//     return ts.createObjectLiteral([
+//         createProperty('uuid', uuid),
+//         createProperty('observable', observableUUID),
+//         createProperty('identifier', identifier),
+//         createProperty('file', file),
+//         createProperty('line', line)
+//     ]);
+// };
 
 // Create operator metadata object literal.
 export const createPipeableOperatorMetadataExpression = (node: ts.CallExpression, pipeIdentifier: string): ts.ObjectLiteralExpression => {

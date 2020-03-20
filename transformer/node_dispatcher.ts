@@ -77,10 +77,10 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
             node = createWrapCreationExpression(node as ts.CallExpression);
             return [node, 'wrapCreationOperator'];
         case 'RXJS_PIPE_VAR_DECL':
-            node = wrapPipeStatement(node as ts.CallExpression, false);
+            node = wrapPipeStatement(node as ts.CallExpression);
             return [node, 'wrapPipe'];
         case 'RXJS_PIPE_EXPR_STMT':
-            node = wrapPipeStatement(node as ts.CallExpression, true);
+            node = wrapPipeStatement(node as ts.CallExpression);
             return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
             node = wrapSubscribeMethod(node as ts.CallExpression);

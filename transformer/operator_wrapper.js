@@ -8,7 +8,6 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 exports.__esModule = true;
 var ts = require("typescript");
-var uuid = require("uuid/v4");
 var metadata_1 = require("./metadata");
 // Returns an expression with given wrapperName wrapping given expression as argument.
 var createWrappedCallExpression = function (wrapperName, innerName, args) {
@@ -41,26 +40,37 @@ var wrapPipeableOperatorArray = function (args, pipeIdentifier) {
     var wrappedOperators = args.map(function (operator, index) { return createWrapper(operator, isLast(index)); });
     return ts.createNodeArray(wrappedOperators);
 };
+// Wrap pipe and all its operators.
+exports.wrapPipeStatement = function (node) {
+    var propertyAccessExpr = node.expression;
+    var source$ = propertyAccessExpr.expression;
+    var identifier = propertyAccessExpr.name;
+    var variableName = ts.isVariableDeclaration(node.parent) // TODO: duplicate code extract to function.
+        ? node.parent.name.getText()
+        : 'anonymous';
+    var _a = metadata_1.createPipeMetadataExpression(node, identifier, variableName), metadataExpression = _a[0], pipeUUID = _a[1];
+    var args = wrapPipeableOperatorArray(node.arguments, pipeUUID).map(function (arg) { return arg; });
+    return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$, metadataExpression], args));
+};
+// export const wrapPipeStatement = (node: ts.CallExpression, anonymous: boolean): ts.CallExpression => {
+//   const pipeUUID = uuid();
+//   let identifier: string;
+//   if (!anonymous) {
+//     identifier = getPipeIdentifier(node);
+//     registerPipe(pipeUUID, identifier, node);
+//   }
+//   const metadata = createPipeMetadataExpression(node, identifier, pipeUUID);
+//   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
+//   const source$ = propertyAccessExpr.expression;
+//   node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
+// const args = node.arguments.map(arg => arg); // ts.NodeArray => array.
+//   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadata, ...args]);
+// };
 var getPipeIdentifier = function (node) {
     if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
         return node.parent.name.getText();
     }
     throw new Error('Can not find pipe identifier!');
-};
-// Wrap pipe and all its operators.
-exports.wrapPipeStatement = function (node, anonymous) {
-    var pipeUUID = uuid();
-    var identifier;
-    if (!anonymous) {
-        identifier = getPipeIdentifier(node);
-        metadata_1.registerPipe(pipeUUID, identifier, node);
-    }
-    var metadata = metadata_1.createPipeMetadataExpression(node, identifier, pipeUUID);
-    var propertyAccessExpr = node.expression;
-    var source$ = propertyAccessExpr.expression;
-    node.arguments = wrapPipeableOperatorArray(node.arguments, pipeUUID);
-    var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
-    return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$, metadata], args));
 };
 // Wrapp subscribe method and return expression.
 exports.wrapSubscribeMethod = function (node) {
