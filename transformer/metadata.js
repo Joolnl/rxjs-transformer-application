@@ -68,24 +68,18 @@ exports.createPipeMetadataExpression = function (node, identifier, variableName)
         createProperty('file', file),
         createProperty('line', line)
     ]);
-    return [objectLiteral, uuid];
+    return [objectLiteral, uuid, observableUUID];
 };
 // Create operator metadata object literal.
-exports.createPipeableOperatorMetadataExpression = function (node, pipeIdentifier) {
+exports.createPipeableOperatorMetadataExpression = function (node, pipeUUID, observableUUID) {
     var operator = node.expression.getText();
     var functionBody = node.arguments.map(function (arg) { return arg.getText(); }).join('');
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
-    var observable;
-    if (ts.isCallExpression(node.parent) && ts.isPropertyAccessExpression(node.parent.expression)) {
-        var identifier = node.parent.expression.expression.getText();
-        var observableObject = observableMapDeprecated.get(identifier, file);
-        observable = observableObject ? observableObject.uuid : 'anonymous';
-    }
     return ts.createObjectLiteral([
         createProperty('type', operator),
         createProperty('function', functionBody),
-        createProperty('observable', observable),
-        createProperty('pipe', pipeIdentifier),
+        createProperty('observable', observableUUID),
+        createProperty('pipe', pipeUUID),
         createProperty('file', file),
         createProperty('line', line)
     ]);

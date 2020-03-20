@@ -28,12 +28,12 @@ exports.createWrapCreationExpression = function (node) {
     return completeCall;
 };
 // Wrap array of pipeable operators.
-var wrapPipeableOperatorArray = function (args, pipeIdentifier) {
+var wrapPipeableOperatorArray = function (args, pipeUUID, observableUUID) {
     if (!args.every(function (operator) { return ts.isCallExpression(operator); })) {
         throw new Error('Can not wrap pipe operators, invalid NodeArray!');
     }
     var createWrapper = function (pipeOperator, last) {
-        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator, pipeIdentifier);
+        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator, pipeUUID, observableUUID);
         return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
     };
     var isLast = function (index) { return args.length - 1 === index; };
@@ -48,8 +48,8 @@ exports.wrapPipeStatement = function (node) {
     var variableName = ts.isVariableDeclaration(node.parent) // TODO: duplicate code extract to function.
         ? node.parent.name.getText()
         : 'anonymous';
-    var _a = metadata_1.createPipeMetadataExpression(node, identifier, variableName), metadataExpression = _a[0], pipeUUID = _a[1];
-    var args = wrapPipeableOperatorArray(node.arguments, pipeUUID).map(function (arg) { return arg; });
+    var _a = metadata_1.createPipeMetadataExpression(node, identifier, variableName), metadataExpression = _a[0], pipeUUID = _a[1], observableUUID = _a[2];
+    var args = wrapPipeableOperatorArray(node.arguments, pipeUUID, observableUUID).map(function (arg) { return arg; });
     return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$, metadataExpression], args));
 };
 var getPipeIdentifier = function (node) {

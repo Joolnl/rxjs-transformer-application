@@ -99,7 +99,7 @@ export const createPipeMetadataExpression = (
     node: ts.CallExpression,
     identifier: ts.Identifier,
     variableName: string
-): [ts.ObjectLiteralExpression, string] => {
+): [ts.ObjectLiteralExpression, string, string] => {
     const { file, line, pos } = extractMetadata(identifier);
     const uuid = generateId(file, line, pos);
     const observableMetadata = extractMetadata(getObservable(node));
@@ -113,27 +113,24 @@ export const createPipeMetadataExpression = (
         createProperty('line', line)
     ]);
 
-    return [objectLiteral, uuid];
+    return [objectLiteral, uuid, observableUUID];
 };
 
 // Create operator metadata object literal.
-export const createPipeableOperatorMetadataExpression = (node: ts.CallExpression, pipeIdentifier: string): ts.ObjectLiteralExpression => {
+export const createPipeableOperatorMetadataExpression = (
+    node: ts.CallExpression,
+    pipeUUID: string,
+    observableUUID: string
+): ts.ObjectLiteralExpression => {
     const operator = node.expression.getText();
     const functionBody = node.arguments.map(arg => arg.getText()).join('');
     const { file, line } = extractMetadata(node);
 
-    let observable: string;
-    if (ts.isCallExpression(node.parent) && ts.isPropertyAccessExpression(node.parent.expression)) {
-        const identifier = node.parent.expression.expression.getText();
-        const observableObject = observableMapDeprecated.get(identifier, file);
-        observable = observableObject ? observableObject.uuid : 'anonymous';
-    }
-
     return ts.createObjectLiteral([
         createProperty('type', operator),
         createProperty('function', functionBody),
-        createProperty('observable', observable),
-        createProperty('pipe', pipeIdentifier),
+        createProperty('observable', observableUUID),
+        createProperty('pipe', pipeUUID),
         createProperty('file', file),
         createProperty('line', line)
     ]);

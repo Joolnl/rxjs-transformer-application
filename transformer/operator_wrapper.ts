@@ -27,13 +27,17 @@ export const createWrapCreationExpression = (node: ts.CallExpression): ts.CallEx
 };
 
 // Wrap array of pipeable operators.
-const wrapPipeableOperatorArray = (args: ts.NodeArray<ts.Expression>, pipeIdentifier: string): ts.NodeArray<ts.Expression> => {
+const wrapPipeableOperatorArray = (
+  args: ts.NodeArray<ts.Expression>,
+  pipeUUID: string,
+  observableUUID: string
+): ts.NodeArray<ts.Expression> => {
   if (!args.every(operator => ts.isCallExpression(operator))) {
     throw new Error('Can not wrap pipe operators, invalid NodeArray!');
   }
 
   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
-    const metadata = createPipeableOperatorMetadataExpression(pipeOperator, pipeIdentifier);
+    const metadata = createPipeableOperatorMetadataExpression(pipeOperator, pipeUUID, observableUUID);
     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
   };
 
@@ -53,8 +57,8 @@ export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression =>
   const variableName = ts.isVariableDeclaration(node.parent)  // TODO: duplicate code extract to function.
     ? node.parent.name.getText()
     : 'anonymous';
-  const [metadataExpression, pipeUUID] = createPipeMetadataExpression(node, identifier, variableName);
-  const args = wrapPipeableOperatorArray(node.arguments, pipeUUID).map(arg => arg);
+  const [metadataExpression, pipeUUID, observableUUID] = createPipeMetadataExpression(node, identifier, variableName);
+  const args = wrapPipeableOperatorArray(node.arguments, pipeUUID, observableUUID).map(arg => arg);
   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadataExpression, ...args]);
 };
 
