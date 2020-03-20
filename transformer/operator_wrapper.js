@@ -27,12 +27,6 @@ exports.createWrapCreationExpression = function (node) {
     var curriedCall = createWrappedCallExpression('wrapCreationOperator', identifier.getText(), [metaDataExpression]);
     var completeCall = ts.createCall(curriedCall, undefined, node.arguments);
     return completeCall;
-    // const operator = expression.expression.getText();
-    // const metaDataExpression = createObservableMetadataExpression(expression, operator);
-    // const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
-    // const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
-    // registerObservableMetadata(expression, operator);
-    // return completeCall;
 };
 // Wrap array of pipeable operators.
 var wrapPipeableOperatorArray = function (args, pipeIdentifier) {

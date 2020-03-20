@@ -83,7 +83,6 @@ interface PipeInfo {
 }
 
 const observableMapDeprecated = new FileMap<ObservableMetadata>();
-// const observableMap = new NodeMap<ObservableMetadata>();
 const pipeMap = new FileMap<PipeInfo>();
 
 // Generate unique id from seed: filename, line and pos.
@@ -92,40 +91,13 @@ const generateId = (filename: string, line: number, pos: number): string => {
     return uuid;
 };
 
-// TODO: generalise function.
 // Extract metadata from given call expression.
 export const extractMetadata = (node: ts.Expression): { file: string, line: number, pos: number } => {
     const file = node.getSourceFile().fileName;
     const line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
     const pos = node.pos;
     return { file, line, pos};
-    // const line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
-    // const file = node.getSourceFile().fileName;
-    // const pos = node.pos;
-    // const uuid = generateId(file, line, pos);
-    // let identifier: string;
-
-    // if (ts.isVariableDeclaration(node.parent)) {
-    //     const variableDeclaration: ts.VariableDeclaration = node.parent;
-    //     identifier = variableDeclaration.name.getText();
-    // }
-
-    // return { line, file, pos, uuid, identifier };
 };
-
-// TODO: registering under only identifier might bug with two likely named identifiers in seperate files.
-// For Observable expression register metadata.
-// export const registerObservableMetadata = (observable: ts.CallExpression, operator: string): void => {
-//     try {
-//         const metadata = extractMetadata(observable);
-//         const identifier = metadata.identifier;
-//         console.log(`registering observable ${metadata.identifier} ${metadata.uuid}`);
-//         observableMapDeprecated.set(identifier, metadata.file, { type: operator, ...metadata });
-
-//     } catch (error) {
-//         throw error;
-//     }
-// };
 
 const createProperty = (name: string, value: any) => ts.createPropertyAssignment(name, ts.createLiteral(value || ''));
 

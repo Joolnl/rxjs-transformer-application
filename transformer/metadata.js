@@ -33,43 +33,19 @@ var NodeMap = /** @class */ (function () {
     return NodeMap;
 }());
 var observableMapDeprecated = new FileMap();
-// const observableMap = new NodeMap<ObservableMetadata>();
 var pipeMap = new FileMap();
 // Generate unique id from seed: filename, line and pos.
 var generateId = function (filename, line, pos) {
     var uuid = v5("" + filename + line + pos, 'e01462c8-517f-11ea-8d77-2e728ce88125');
     return uuid;
 };
-// TODO: generalise function.
 // Extract metadata from given call expression.
 exports.extractMetadata = function (node) {
     var file = node.getSourceFile().fileName;
     var line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
     var pos = node.pos;
     return { file: file, line: line, pos: pos };
-    // const line = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line;
-    // const file = node.getSourceFile().fileName;
-    // const pos = node.pos;
-    // const uuid = generateId(file, line, pos);
-    // let identifier: string;
-    // if (ts.isVariableDeclaration(node.parent)) {
-    //     const variableDeclaration: ts.VariableDeclaration = node.parent;
-    //     identifier = variableDeclaration.name.getText();
-    // }
-    // return { line, file, pos, uuid, identifier };
 };
-// TODO: registering under only identifier might bug with two likely named identifiers in seperate files.
-// For Observable expression register metadata.
-// export const registerObservableMetadata = (observable: ts.CallExpression, operator: string): void => {
-//     try {
-//         const metadata = extractMetadata(observable);
-//         const identifier = metadata.identifier;
-//         console.log(`registering observable ${metadata.identifier} ${metadata.uuid}`);
-//         observableMapDeprecated.set(identifier, metadata.file, { type: operator, ...metadata });
-//     } catch (error) {
-//         throw error;
-//     }
-// };
 var createProperty = function (name, value) { return ts.createPropertyAssignment(name, ts.createLiteral(value || '')); };
 // Create metadata object literal expression from expression and operator.
 exports.createObservableMetadataExpression = function (node, variableName) {
