@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import * as uuid from 'uuid/v4';
 import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
-  registerObservableMetadata, createSubscriberMetadataExpression, registerPipe, createPipeMetadataExpression
+  createSubscriberMetadataExpression, registerPipe, createPipeMetadataExpression
 } from './metadata';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
@@ -16,14 +16,23 @@ const createWrappedCallExpression: WrappedCallExpressionFn = (wrapperName: strin
 };
 
 // Create wrapped RxJS creation operator expression.
-export const createWrapCreationExpression = (expression: ts.CallExpression): ts.CallExpression => {
-  const operator = expression.expression.getText();
-  const metaDataExpression = createObservableMetadataExpression(expression, operator);
-  const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
-  const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
-
-  registerObservableMetadata(expression, operator);
+export const createWrapCreationExpression = (node: ts.CallExpression): ts.CallExpression => {
+  const identifier: ts.Identifier = node.expression as ts.Identifier;
+  const variableName = ts.isVariableDeclaration(node.parent)
+    ? node.parent.name.getText()
+    : 'anonymous';
+  const metaDataExpression = createObservableMetadataExpression(identifier, variableName);
+  const curriedCall = createWrappedCallExpression('wrapCreationOperator', identifier.getText(), [metaDataExpression]);
+  const completeCall = ts.createCall(curriedCall, undefined, node.arguments);
   return completeCall;
+
+  // const operator = expression.expression.getText();
+  // const metaDataExpression = createObservableMetadataExpression(expression, operator);
+  // const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
+  // const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+
+  // registerObservableMetadata(expression, operator);
+  // return completeCall;
 };
 
 // Wrap array of pipeable operators.

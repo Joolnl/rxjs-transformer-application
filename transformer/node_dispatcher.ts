@@ -9,14 +9,8 @@ type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): boolean => {
-    try {
-        if (ts.isCallExpression(node)) {
-            if (rxjsCreationOperators.some(operator => operator === node.expression.getText())) {
-                return true;
-            }
-        }
-    } catch (e) {
-        return false;
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
+        return rxjsCreationOperators.some(operator => operator === node.expression.getText());
     }
     return false;
 };

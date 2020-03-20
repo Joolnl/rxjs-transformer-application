@@ -18,13 +18,21 @@ var createWrappedCallExpression = function (wrapperName, innerName, args) {
     return call;
 };
 // Create wrapped RxJS creation operator expression.
-exports.createWrapCreationExpression = function (expression) {
-    var operator = expression.expression.getText();
-    var metaDataExpression = metadata_1.createObservableMetadataExpression(expression, operator);
-    var curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
-    var completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
-    metadata_1.registerObservableMetadata(expression, operator);
+exports.createWrapCreationExpression = function (node) {
+    var identifier = node.expression;
+    var variableName = ts.isVariableDeclaration(node.parent)
+        ? node.parent.name.getText()
+        : 'anonymous';
+    var metaDataExpression = metadata_1.createObservableMetadataExpression(identifier, variableName);
+    var curriedCall = createWrappedCallExpression('wrapCreationOperator', identifier.getText(), [metaDataExpression]);
+    var completeCall = ts.createCall(curriedCall, undefined, node.arguments);
     return completeCall;
+    // const operator = expression.expression.getText();
+    // const metaDataExpression = createObservableMetadataExpression(expression, operator);
+    // const curriedCall = createWrappedCallExpression('wrapCreationOperator', operator, [metaDataExpression]);
+    // const completeCall = ts.createCall(curriedCall, undefined, expression.arguments);
+    // registerObservableMetadata(expression, operator);
+    // return completeCall;
 };
 // Wrap array of pipeable operators.
 var wrapPipeableOperatorArray = function (args, pipeIdentifier) {

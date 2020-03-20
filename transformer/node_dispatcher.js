@@ -6,15 +6,8 @@ var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer'
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 // Determine if given node is RxJS Creation Operator Statement.
 var isRxJSCreationOperator = function (node) {
-    try {
-        if (ts.isCallExpression(node)) {
-            if (rxjsCreationOperators.some(function (operator) { return operator === node.expression.getText(); })) {
-                return true;
-            }
-        }
-    }
-    catch (e) {
-        return false;
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
+        return rxjsCreationOperators.some(function (operator) { return operator === node.expression.getText(); });
     }
     return false;
 };

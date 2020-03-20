@@ -63,7 +63,7 @@ const unpack = <T>(event: T | Box<T>, observable: string): { id: number, event: 
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
-    console.log('Wrapped creation operator');
+    console.log('Wrapped creation operator ', metadata.identifier);
     // console.log(`wrapCreationOperator ${metadata.uuid} ${metadata.type} ${metadata.identifier} ${metadata.file} ${metadata.line}`);
     const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
