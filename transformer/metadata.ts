@@ -34,24 +34,24 @@ export interface SubscriberMetadata {
 }
 
 // For storing data by identifier and file origin.
-class FileMap<T> {
-    private data: Map<string, T>;
-    constructor() {
-        this.data = new Map<string, T>();
-    }
+// class FileMap<T> {
+//     private data: Map<string, T>;
+//     constructor() {
+//         this.data = new Map<string, T>();
+//     }
 
-    private key = (identifier: string, file: string) => identifier + file;
+//     private key = (identifier: string, file: string) => identifier + file;
 
-    get = (identifier: string, file: string) => {
-        return this.data.get(this.key(identifier, file));
-    }
+//     get = (identifier: string, file: string) => {
+//         return this.data.get(this.key(identifier, file));
+//     }
 
-    set = (identifier: string, file: string, data: T) => {
-        this.data.set(this.key(identifier, file), data);
-    }
-}
+//     set = (identifier: string, file: string, data: T) => {
+//         this.data.set(this.key(identifier, file), data);
+//     }
+// }
 
-const observableMapDeprecated = new FileMap<ObservableMetadata>();
+// const observableMapDeprecated = new FileMap<ObservableMetadata>();
 
 // Generate unique id from seed: filename, line and pos.
 const generateId = (filename: string, line: number, pos: number): string => {
@@ -136,18 +136,45 @@ export const createPipeableOperatorMetadataExpression = (
     ]);
 };
 
-const getIdentifier = (node: ts.Expression): string => {
-    if (ts.isCallExpression(node) || ts.isPropertyAccessExpression(node)) {
-        return getIdentifier(node.expression as ts.Expression);
+// const getIdentifier = (node: ts.Expression): string => {
+//     if (ts.isCallExpression(node) || ts.isPropertyAccessExpression(node)) {
+//         return getIdentifier(node.expression as ts.Expression);
+//     }
+//     return node.getText();
+// };
+
+interface PipeExpression {
+    node: ts.Identifier;
+    anonymous: boolean;
+}
+
+// Recursively get all pipes a subscribe belongs to. 0...n
+export const getPipeArray = (node: ts.Expression, pipes?: Array<PipeExpression>): Array<PipeExpression> => {
+    const result: Array<PipeExpression> = pipes ? pipes : [];
+    if (ts.isPropertyAccessExpression(node) || ts.isCallExpression(node)) {
+        if (ts.isPropertyAccessExpression(node) && node.name.getText() === 'pipe') {
+            result.push({ node: node.name, anonymous: true });
+        } else if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && node.name.getText() === 'subscribe') {
+            result.push({ node: node.expression, anonymous: false });
+        }
+
+        return getPipeArray(node.expression, result);
     }
-    return node.getText();
+    return result;
 };
 
+// Create subscribe metadata object literal.
 export const createSubscriberMetadataExpression = (node: ts.CallExpression): void => {
-    const identifier = getIdentifier(node);
+    console.log('creating subscribe metadata expression.');
+    // const identifier = getIdentifier(node);
     const { file, line } = extractMetadata(node);
-    const observable = observableMapDeprecated.get(identifier, file);
-    const uuid = observable ? observable.uuid : 'anonymous';
-    // console.log(`identifier ${identifier} observable ${uuid}`);
-    // console.log(`expression ${node.expression.getText()}`);
+    const observableMetadata = extractMetadata(getObservable(node));
+    const observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
+
+    console.log(`getting pipes for ${line}`);
+    getPipeArray(node).map(pipeExpr => {
+        const line = pipeExpr.node.getSourceFile().getLineAndCharacterOfPosition(pipeExpr.node.getStart()).line;
+        console.log(`pipe line ${line} anonymous ${pipeExpr.anonymous}`);
+        // console.log(`pipe ${pipe.getText()} line ${node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line}`);
+    });
 };

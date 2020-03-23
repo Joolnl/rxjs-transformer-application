@@ -39,7 +39,9 @@ export class CounterComponent {
       tap(() => console.log('test'))
     );
 
-    // piped.subscribe(x => console.log(x));
+    // const piped2 = piped.pipe(map(x => 1));
+
+    piped.subscribe(x => console.log(x));
 
     add.pipe(
       tap(null),

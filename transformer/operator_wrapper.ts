@@ -62,13 +62,6 @@ export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression =>
   return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, [source$, metadataExpression, ...args]);
 };
 
-const getPipeIdentifier = (node: ts.CallExpression): string => {
-  if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
-    return node.parent.name.getText();
-  }
-  throw new Error('Can not find pipe identifier!');
-};
-
 // Wrapp subscribe method and return expression.
 export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression => {
   const args = node.arguments.map(arg => arg);  // ts.NodeArray => array.

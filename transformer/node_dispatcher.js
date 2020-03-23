@@ -11,6 +11,7 @@ var isRxJSCreationOperator = function (node) {
     }
     return false;
 };
+// TODO: cleanup like isRxJSCreationOperator.
 // Determine if given node is given method call.
 var isMethodCall = function (node, method) {
     try {

@@ -15,6 +15,7 @@ const isRxJSCreationOperator = (node: ts.Node): boolean => {
     return false;
 };
 
+// TODO: cleanup like isRxJSCreationOperator.
 // Determine if given node is given method call.
 const isMethodCall = (node: ts.Node, method: string): boolean => {
     try {

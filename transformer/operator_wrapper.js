@@ -52,12 +52,6 @@ exports.wrapPipeStatement = function (node) {
     var args = wrapPipeableOperatorArray(node.arguments, pipeUUID, observableUUID).map(function (arg) { return arg; });
     return ts.createCall(ts.createIdentifier('wrapPipe'), undefined, __spreadArrays([source$, metadataExpression], args));
 };
-var getPipeIdentifier = function (node) {
-    if (ts.isCallExpression(node) && ts.isVariableDeclaration(node.parent)) {
-        return node.parent.name.getText();
-    }
-    throw new Error('Can not find pipe identifier!');
-};
 // Wrapp subscribe method and return expression.
 exports.wrapSubscribeMethod = function (node) {
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
