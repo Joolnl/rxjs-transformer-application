@@ -29,6 +29,8 @@ export interface PipeableOperatorMetadata {
 
 export interface SubscriberMetadata {
     observable: string;
+    pipes: Array<string>;
+    func: string;
     file: string;
     line: number;
 }
@@ -143,9 +145,7 @@ const getPipeArray = (node: ts.Expression, pipes?: Array<Pipe>): Array<Pipe> => 
 };
 
 // Create subscribe metadata object literal.
-export const createSubscriberMetadataExpression = (node: ts.CallExpression): void => {
-    console.log('creating subscribe metadata expression.');
-    // const identifier = getIdentifier(node);
+export const createSubscriberMetadataExpression = (node: ts.CallExpression): ts.ObjectLiteralExpression => {
     const { file, line } = extractMetadata(node);
     const observableMetadata = extractMetadata(getObservable(node));
     const observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
@@ -165,5 +165,14 @@ export const createSubscriberMetadataExpression = (node: ts.CallExpression): voi
         .map(pipeNode => pipeNode.getText())
         .map(pipeName => namedPipes.get(pipeName));
 
-    anonymousPipes.concat(nonAnonymousPipes).map(pipe => console.log(`pipe uuid: ${pipe}`));
+    return ts.createObjectLiteral([
+        createProperty('observable', observableUUID),
+        //  ts.createArrayLiteral(anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral('pipe')))),
+        ts.createPropertyAssignment('pipes',
+            ts.createArrayLiteral([...anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral(pipe))])
+        ),
+        createProperty('function', 'testFn'),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
 };

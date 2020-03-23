@@ -67,7 +67,7 @@ export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression 
   const args = node.arguments.map(arg => arg);  // ts.NodeArray => array.
   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
   const source$ = propertyAccessExpr.expression;
-  createSubscriberMetadataExpression(node);
+  const metadata = createSubscriberMetadataExpression(node);
 
-  return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, [source$, ...args]);
+  return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, [source$, metadata, ...args]);
 };

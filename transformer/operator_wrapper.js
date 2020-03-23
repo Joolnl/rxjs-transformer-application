@@ -57,6 +57,6 @@ exports.wrapSubscribeMethod = function (node) {
     var args = node.arguments.map(function (arg) { return arg; }); // ts.NodeArray => array.
     var propertyAccessExpr = node.expression;
     var source$ = propertyAccessExpr.expression;
-    metadata_1.createSubscriberMetadataExpression(node);
-    return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, __spreadArrays([source$], args));
+    var metadata = metadata_1.createSubscriberMetadataExpression(node);
+    return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, __spreadArrays([source$, metadata], args));
 };

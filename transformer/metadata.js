@@ -1,4 +1,11 @@
 "use strict";
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 exports.__esModule = true;
 var ts = require("typescript");
 var v5 = require("uuid/v5");
@@ -88,8 +95,6 @@ var getPipeArray = function (node, pipes) {
 };
 // Create subscribe metadata object literal.
 exports.createSubscriberMetadataExpression = function (node) {
-    console.log('creating subscribe metadata expression.');
-    // const identifier = getIdentifier(node);
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
     var observableMetadata = exports.extractMetadata(getObservable(node));
     var observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
@@ -106,5 +111,12 @@ exports.createSubscriberMetadataExpression = function (node) {
         .map(function (pipe) { return pipe.node; })
         .map(function (pipeNode) { return pipeNode.getText(); })
         .map(function (pipeName) { return namedPipes.get(pipeName); });
-    anonymousPipes.concat(nonAnonymousPipes).map(function (pipe) { return console.log("pipe uuid: " + pipe); });
+    return ts.createObjectLiteral([
+        createProperty('observable', observableUUID),
+        //  ts.createArrayLiteral(anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral('pipe')))),
+        ts.createPropertyAssignment('pipes', ts.createArrayLiteral(__spreadArrays(anonymousPipes.concat(nonAnonymousPipes).map(function (pipe) { return ts.createStringLiteral(pipe); })))),
+        createProperty('function', 'testFn'),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
 };

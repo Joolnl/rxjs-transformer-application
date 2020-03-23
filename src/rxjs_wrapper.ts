@@ -1,6 +1,6 @@
 import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata } from '../transformer/metadata';
+import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata } from '../transformer/metadata';
 declare var chrome;
 
 interface Event<T> {
@@ -103,8 +103,14 @@ type Error<E> = (error: E) => void;
 type Complete = () => void;
 
 // Wrap subscribe and its optional next, error and complete arguments.
-export const wrapSubscribe = <T, E>(source$: Observable<T>, next?: Next<T>, error?: Error<E>, complete?: Complete): Subscription => {
-    console.log('wrapped subscribe!');
+export const wrapSubscribe = <T, E>(
+    source$: Observable<T>,
+    metadata: SubscriberMetadata,
+    next?: Next<T>,
+    error?: Error<E>,
+    complete?: Complete
+): Subscription => {
+    console.log(`wrapped subscribe ${metadata.observable}`);
     let [wrappedNext, wrappedError, wrappedComplete] = [null, null, null];
 
     if (next) {
