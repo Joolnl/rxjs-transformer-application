@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
-import { fromEvent, interval, range, of } from 'rxjs';
-import { map, merge, scan, tap, filter } from 'rxjs/operators';
+import { Component, AfterViewInit } from '@angular/core';
+import { fromEvent, interval, merge, of } from 'rxjs';
+import { map, scan, tap, filter } from 'rxjs/operators';
 
 
 
@@ -9,8 +9,8 @@ import { map, merge, scan, tap, filter } from 'rxjs/operators';
   templateUrl: './counter.component.html',
   styleUrls: ['./counter.component.sass']
 })
-export class CounterComponent {
-  protected counter: number = 0;
+export class CounterComponent implements AfterViewInit {
+  protected counter = 0;
 
   constructor() {
 
@@ -44,12 +44,19 @@ export class CounterComponent {
     piped.subscribe(x => console.log(x));
     piped.subscribe(null);
 
-    add.pipe(
+    // add.pipe(
+    //   tap(null),
+    //   map(() => 1),                          // map events from add to 1.
+    //   merge(substract.pipe(map(() => -1))),  // map events from substract to -1 and merge with add stream.
+    //   scan((acc, curr) => acc += curr)        // accumulate values.
+    // ).subscribe(i => this.counter = i);
+
+    merge(add.pipe(
       tap(null),
-      map(() => 1),                          // map events from add to 1.
-      merge(substract.pipe(map(() => -1))),  // map events from substract to -1 and merge with add stream.
-      scan((acc, curr) => acc += curr)        // accumulate values.
-    ).subscribe(i => this.counter = i);
+      map(() => 1)
+    ), substract.pipe(map(() => -1)))
+      .pipe(scan((acc, curr) => acc += curr))
+      .subscribe(i => this.counter = i);
 
   }
 
