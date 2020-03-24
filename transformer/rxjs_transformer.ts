@@ -21,13 +21,13 @@ const addWrapperFunctionImportArray = (rootNode: ts.SourceFile, operators: strin
   const file = 'src/rxjs_wrapper';
   operators
     .filter(operator => operator !== null)
-    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file))
+    .map(operator => rootNode = addNamedImportToSourceFile(rootNode, operator, operator, file));
   return rootNode;
 };
 
 
 // Loops over all nodes, when node matches teststring, replaces the string literal.
-export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationContext) => {
+export const dummyTransformer = (context: ts.TransformationContext) => {
 
   return (rootNode: ts.SourceFile) => {
     if (rootNode.fileName.includes('/rxjs_wrapper.ts')) {
@@ -35,22 +35,31 @@ export const dummyTransformer = <T extends ts.Node>(context: ts.TransformationCo
       return rootNode;
     }
 
-    const importStatements: Set<string> = new Set();
-    function visit(node: ts.SourceFile): ts.SourceFile {
+    function visitSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
+      const importStatements: Set<string> = new Set();
 
-      const realVisit = (node: ts.Node): ts.Node => {
+      const visitNodes = (node: ts.Node): ts.Node => {
         const [dispatchedNode, wrapperImport] = dispatchNode(node);
-        wrapperImport && importStatements.add(wrapperImport);
+        if (wrapperImport) {
+          importStatements.add(wrapperImport);
+        }
 
-        return ts.visitEachChild(dispatchedNode, realVisit, context);
+        return ts.visitEachChild(dispatchedNode, visitNodes, context);
       };
 
-      // Add required imports to sourceFile after visitor pattern.
-      const root = realVisit(node) as ts.SourceFile;
-      // TODO: Optimise imports, now importing these three every file.
-      return addWrapperFunctionImportArray(root, ['wrapCreationOperator', 'wrapPipeableOperator', 'sendEventToBackpage', 'wrapSubscribe', ...Array.from(importStatements)]);
+      const root = visitNodes(sourceFile) as ts.SourceFile;
+
+      if (importStatements.size) { // Required by all wrapper functions.
+        importStatements.add('sendEventToBackpage');
+      }
+
+      if (importStatements.has('wrapPipe')) { // Required in wrapped pipe.
+        importStatements.add('wrapPipeableOperator');
+      }
+
+      return addWrapperFunctionImportArray(root, Array.from(importStatements));
     }
 
-    return ts.visitNode(rootNode, visit);
+    return ts.visitNode(rootNode, visitSourceFile);
   };
 };

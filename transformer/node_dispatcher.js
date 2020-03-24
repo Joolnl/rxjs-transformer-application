@@ -6,20 +6,12 @@ var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer'
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 // Determine if given node is RxJS Creation Operator Statement.
 var isRxJSCreationOperator = function (node) {
-    try {
-        if (!ts.isCallExpression(node)) {
-            return [false, null];
-        }
-        var operator = rxjsCreationOperators
-            .filter(function (operator) { return operator === node.expression.getText(); })
-            .pop();
-        return operator ? [true, operator] : [false, null];
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
+        return rxjsCreationOperators.some(function (operator) { return operator === node.expression.getText(); });
     }
-    catch (e) {
-        // console.log(e);
-        return [false, null];
-    }
+    return false;
 };
+// TODO: cleanup like isRxJSCreationOperator.
 // Determine if given node is given method call.
 var isMethodCall = function (node, method) {
     try {
@@ -35,47 +27,45 @@ var isMethodCall = function (node, method) {
         return false;
     }
 };
-// Determine if given node is RxJS Pipe Statement.
-var isPipeStatement = function (node) { return isMethodCall(node, 'pipe'); };
+// Check if node is pipe property access expression.
+var isPipePropertyAccessExpr = function (node) {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+        return node.expression.name.getText() === 'pipe' ? true : false;
+    }
+    return false;
+};
 // Determine if given node is RxJS Subscribe Statement.
 var isSubscribeStatement = function (node) { return isMethodCall(node, 'subscribe'); };
-// Wrap operator into wrapOperator.
-var wrap = function (operator) {
-    var capitalized = operator[0].toUpperCase() + operator.slice(1);
-    return "wrap" + capitalized;
-};
-// Classify given node, return node classification and import statement.
+// Classify given node, return node classification.
 var classify = function (node) {
     var classification = 'UNCLASSIFIED';
-    var importStatement = null;
-    var _a = isRxJSCreationOperator(node), foundCreationOperator = _a[0], creationOperator = _a[1];
-    if (foundCreationOperator) {
+    if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
-        importStatement = wrap(creationOperator);
     }
-    isPipeStatement(node) && (classification = 'RXJS_PIPE_OPERATOR');
-    isSubscribeStatement(node) && (classification = 'RXJS_SUBSCRIBE');
-    return [classification, importStatement];
+    if (isPipePropertyAccessExpr(node)) {
+        classification = 'RXJS_PIPE';
+    }
+    if (isSubscribeStatement(node)) {
+        classification = 'RXJS_SUBSCRIBE';
+    }
+    return classification;
 };
 // Transforms node if necassary, returns original or transformed node along required import statement.
 exports.dispatchNode = function (node) {
-    var _a = classify(node), nodeType = _a[0], importStatement = _a[1];
+    var nodeType = classify(node);
     switch (nodeType) {
         case 'UNCLASSIFIED':
-            // Unclassified, not transforming.
-            break;
+            return [node, null];
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
-            break;
-        case 'RXJS_PIPE_OPERATOR':
-            node = operator_wrapper_1.wrapAllPipeableOperators(node);
-            break;
+            return [node, 'wrapCreationOperator'];
+        case 'RXJS_PIPE':
+            node = operator_wrapper_1.wrapPipeStatement(node);
+            return [node, 'wrapPipe'];
         case 'RXJS_SUBSCRIBE':
             node = operator_wrapper_1.wrapSubscribeMethod(node);
-            break;
+            return [node, 'wrapSubscribe'];
         default:
             throw new Error('Invalid node classification!');
     }
-    ;
-    return [node, importStatement];
 };
