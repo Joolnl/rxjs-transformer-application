@@ -26,7 +26,7 @@ const isMethodCall = (node: ts.Node, method: string): boolean => {
             .filter(child => ts.isPropertyAccessExpression(child))
             .filter((child: ts.PropertyAccessExpression) => child.name.getText() === method);
 
-        return result.length ? true : false;
+        return result.length > 0;
     } catch (e) {
         return false;
     }
@@ -49,13 +49,9 @@ const classify = (node: ts.Node): NodeType => {
 
     if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
-    }
-
-    if (isPipePropertyAccessExpr(node)) {
+    } else if (isPipePropertyAccessExpr(node)) {
         classification = 'RXJS_PIPE';
-    }
-
-    if (isSubscribeStatement(node)) {
+    } else if (isSubscribeStatement(node)) {
         classification = 'RXJS_SUBSCRIBE';
     }
 
