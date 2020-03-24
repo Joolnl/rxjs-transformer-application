@@ -1,9 +1,11 @@
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { singleWrapOperatorFunction } from './rxjs_wrapper';
+import { Observable, from } from 'rxjs';
+import { toArray, map } from 'rxjs/operators';
+import { wrapCreationOperator, wrapPipeableOperator, wrapPipe, wrapSubscribe } from './rxjs_wrapper';
+import { ObservableMetadata, PipeMetadata, PipeableOperatorMetadata, SubscriberMetadata } from '../transformer/metadata';
 import { TestScheduler } from 'rxjs/testing';
+import * as uuid from 'uuid/v4';
 
-describe('Pipeline Wrapper', () => {
+describe('RxJS Wrappers', () => {
 
     let testScheduler: TestScheduler;
     beforeEach(() => {
@@ -11,6 +13,95 @@ describe('Pipeline Wrapper', () => {
             expect(actual).toEqual(expected);
         });
     });
+
+    const observableMetadata: ObservableMetadata = {
+        uuid: uuid(),
+        identifier: 'mock',
+        file: 'rxjs_wrapper.spec.ts',
+        line: 17
+    };
+
+    const createWrappedCreationOperator = (input: Array<number>): Observable<number> => {
+        return wrapCreationOperator(from, observableMetadata)(input);
+    };
+
+
+    it('wrapCreationOperator should return observabvle and shouldn\'t alter stream.', () => {
+        const input = [1, 2, 3];
+        const source$ = createWrappedCreationOperator(input);
+
+        source$.pipe(toArray()).subscribe((result: number[]) => {
+            expect(input).toEqual(result);
+        });
+    });
+
+    const pipeMetadata: PipeMetadata = {
+        uuid: uuid(),
+        observable: uuid(),
+        file: 'rxjs_wrapper.spec.ts',
+        line: 38
+    };
+
+    // TODO: test if to array works
+
+    it('wrapPipe should return observable and shouldn\'t alter stream.', () => {
+        const input = ['a', 'b', 'c'];
+        const source$ = from(input);
+        wrapPipe(source$, pipeMetadata, map(e => e))
+            .pipe(toArray())
+            .subscribe((result: string[]) => {
+                expect(input).toEqual(result);
+            });
+    });
+
+    const pipeOperatorMetadata: PipeableOperatorMetadata = {
+        type: 'map',
+        function: 'x => x',
+        observable: uuid(),
+        pipe: uuid(),
+        file: 'rxjs_wrapper.spec.ts',
+        line: 57
+    };
+
+    it('Wrapped pipe oporators shouldn\' alter logic.', () => {
+        const input = [1, 2, 3];
+        const wrappedMap = wrapPipeableOperator(map(x => x), true, pipeOperatorMetadata);
+        from(input)
+            .pipe(wrappedMap, toArray())
+            .subscribe((result: number[]) => {
+                expect(input).toEqual(result);
+            });
+    });
+
+    const subscriberMetadata: SubscriberMetadata = {
+        observable: uuid(),
+        pipes: [],
+        func: '(result: number[]) => expect(input).toEqual(result)',
+        file: 'rxjs_wrapper.spec.ts',
+        line: 76
+    };
+
+    it('Wrapped subscribe shouldn\'t alter stream.', () => {
+        const input = [1, 2, 3];
+        const source$ = from(input).pipe(toArray());
+        wrapSubscribe(source$, subscriberMetadata,
+            (result: number[]) => {
+                expect(input).toEqual(result);
+            });
+    });
+
+    // it('pipeline n=7 should add 100 to number', () => {
+    //     testScheduler.run(({ cold, expectObservable }) => {
+    //         const values = { a: 1, b: 2, c: -1000 };
+    //         const source$ = cold('a-b-c|', values);
+    //         const expectedMarble = 'a-b-c|';
+    //         const expectedValues = { a: 101, b: 102, c: -900 };
+
+    //         const result$ = transformedPipelineN7(source$);
+    //         expectObservable(result$).toBe(expectedMarble, expectedValues);
+    //     });
+    // });
+
 
     // const metadata: Metadata = {
     //     uuid: '6ced7567-0277-497f-9465-4d225e190090',
@@ -23,11 +114,11 @@ describe('Pipeline Wrapper', () => {
     // const curriedUseWrapOperatorFunction = useWrapOperatorFunction(metadata);
     // const curriedSingleWrapOperatorFunction = singleWrapOperatorFunction(metadata);
 
-    const transformedPipelineN1 = (source$: Observable<number>): Observable<number | any> => {
-        return source$.pipe(
-            singleWrapOperatorFunction(map(n => n += 1), true)
-        );
-    };
+    // const transformedPipelineN1 = (source$: Observable<number>): Observable<number | any> => {
+    //     return source$.pipe(
+    //         singleWrapOperatorFunction(map(n => n += 1), true)
+    //     );
+    // };
 
     // const transformedPipelineN1 = (source$: Observable<number>): Observable<number> => {
     //     return source$.pipe(
@@ -62,17 +153,17 @@ describe('Pipeline Wrapper', () => {
     //     );
     // };
 
-    it('pipeline n=1 should add 1 to number', () => {
-        testScheduler.run(({ cold, expectObservable }) => {
-            const values = { a: 1, b: 2, c: 700001 };
-            const source$ = cold('a-b-c|', values);
-            const expectedMarble = 'a-b-c|';
-            const expectedValues = { a: 2, b: 3, c: 700002 };
+    // it('pipeline n=1 should add 1 to number', () => {
+    //     testScheduler.run(({ cold, expectObservable }) => {
+    //         const values = { a: 1, b: 2, c: 700001 };
+    //         const source$ = cold('a-b-c|', values);
+    //         const expectedMarble = 'a-b-c|';
+    //         const expectedValues = { a: 2, b: 3, c: 700002 };
 
-            const result$ = transformedPipelineN1(source$);
-            expectObservable(result$).toBe(expectedMarble, expectedValues);
-        });
-    });
+    //         const result$ = transformedPipelineN1(source$);
+    //         expectObservable(result$).toBe(expectedMarble, expectedValues);
+    //     });
+    // });
 
     // it('pipeline n=2 should add 2 to number', () => {
     //     testScheduler.run(({ cold, expectObservable }) => {
