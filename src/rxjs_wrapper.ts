@@ -129,10 +129,14 @@ export const wrapSubscribe = <T, E>(
     const message = createPayloadMessage(metadata, MessageType.subscribe);
     sendToBackpage(message);
 
-    let [wrappedNext, wrappedError, wrappedComplete] = [null, null, null];
+    const subscriber = {
+        next: null,
+        error: null,
+        complete: null
+    };
 
     if (next) {
-        wrappedNext = (event: T) => {
+        subscriber.next = (event: T) => {
             const eventMessage = createSubscribeEventMessage('NEXT', event, metadata.observable);
             sendToBackpage(eventMessage);
             console.log('wrapped next');
@@ -141,7 +145,7 @@ export const wrapSubscribe = <T, E>(
     }
 
     if (error) {
-        wrappedError = (err: E) => {
+        subscriber.error = (err: E) => {
             const errMessage = createSubscribeEventMessage('ERROR', err, metadata.observable);
             sendToBackpage(errMessage);
             console.log('wrapped error');
@@ -150,7 +154,7 @@ export const wrapSubscribe = <T, E>(
     }
 
     if (complete) {
-        wrappedComplete = () => {
+        subscriber.complete = () => {
             const completeMessage = createSubscribeEventMessage('COMPLETE', null, metadata.observable);
             sendToBackpage(completeMessage);
             console.log('wrapped complete');
@@ -158,9 +162,5 @@ export const wrapSubscribe = <T, E>(
         };
     }
 
-    return source$.subscribe({
-        next: wrappedNext,
-        error: wrappedError,
-        complete: wrappedComplete
-    });
+    return source$.subscribe(subscriber);
 };
