@@ -21,7 +21,7 @@ type Payload<T> = PipeMetadata | PipeableOperatorMetadata | ObservableMetadata |
 enum MessageType {
     observable = 'observable',
     pipe = 'pipe',
-    oprator = 'operator',
+    operator = 'operator',
     subscribe = 'subscribe',
     subscribeEvent = 'subscribeEvent',
     event = 'event'
@@ -78,7 +78,7 @@ export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) =
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => {
     return (source$: Observable<T>) => {
         console.log(`wrapPipeableOperator ${metadata.line} ${metadata.function} ${metadata.observable}`);
-        const message = createPayloadMessage(metadata, MessageType.oprator);
+        const message = createPayloadMessage(metadata, MessageType.operator);
         sendToBackpage(message);
 
         let id: number;
