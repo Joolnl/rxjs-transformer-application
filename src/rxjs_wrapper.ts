@@ -10,8 +10,14 @@ interface Event<T> {
     uuid: number;
 }
 
+enum SubscribeEventType {
+    complete = 'COMPLETE',
+    error = 'ERROR',
+    next = 'NEXT'
+}
+
 interface SubscribeEvent<T> {
-    type: 'COMPLETE' | 'ERROR' | 'NEXT';
+    type: SubscribeEventType;
     data?: T;
     observable: string;
 }
@@ -137,7 +143,7 @@ export const wrapSubscribe = <T, E>(
 
     if (next) {
         subscriber.next = (event: T) => {
-            const eventMessage = createSubscribeEventMessage('NEXT', event, metadata.observable);
+            const eventMessage = createSubscribeEventMessage(SubscribeEventType.next, event, metadata.observable);
             sendToBackpage(eventMessage);
             console.log('wrapped next');
             return next(event);
@@ -146,7 +152,7 @@ export const wrapSubscribe = <T, E>(
 
     if (error) {
         subscriber.error = (err: E) => {
-            const errMessage = createSubscribeEventMessage('ERROR', err, metadata.observable);
+            const errMessage = createSubscribeEventMessage(SubscribeEventType.error, err, metadata.observable);
             sendToBackpage(errMessage);
             console.log('wrapped error');
             return error(err);
@@ -155,7 +161,7 @@ export const wrapSubscribe = <T, E>(
 
     if (complete) {
         subscriber.complete = () => {
-            const completeMessage = createSubscribeEventMessage('COMPLETE', null, metadata.observable);
+            const completeMessage = createSubscribeEventMessage(SubscribeEventType.complete, null, metadata.observable);
             sendToBackpage(completeMessage);
             console.log('wrapped complete');
             return complete();
