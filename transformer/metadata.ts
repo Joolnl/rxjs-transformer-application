@@ -167,7 +167,6 @@ export const createSubscriberMetadataExpression = (node: ts.CallExpression): ts.
 
     return ts.createObjectLiteral([
         createProperty('observable', observableUUID),
-        //  ts.createArrayLiteral(anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral('pipe')))),
         ts.createPropertyAssignment('pipes',
             ts.createArrayLiteral([...anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral(pipe))])
         ),

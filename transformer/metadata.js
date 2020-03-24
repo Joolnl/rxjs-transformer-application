@@ -113,7 +113,6 @@ exports.createSubscriberMetadataExpression = function (node) {
         .map(function (pipeName) { return namedPipes.get(pipeName); });
     return ts.createObjectLiteral([
         createProperty('observable', observableUUID),
-        //  ts.createArrayLiteral(anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral('pipe')))),
         ts.createPropertyAssignment('pipes', ts.createArrayLiteral(__spreadArrays(anonymousPipes.concat(nonAnonymousPipes).map(function (pipe) { return ts.createStringLiteral(pipe); })))),
         createProperty('function', 'testFn'),
         createProperty('file', file),

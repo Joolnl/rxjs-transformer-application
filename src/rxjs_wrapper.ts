@@ -1,4 +1,4 @@
-import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } from 'rxjs';
+import { Observable, MonoTypeOperatorFunction, Subscription } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata } from '../transformer/metadata';
 declare var chrome;
@@ -9,13 +9,20 @@ interface Event<T> {
     uuid: number;
 }
 
-type Payload<T> = PipeableOperatorMetadata | ObservableMetadata | Event<T>;
+interface SubscribeEvent<T> {
+    type: 'COMPLETE' | 'ERROR' | 'NEXT';
+    data?: T;
+    observable: string;
+}
+
+type Payload<T> = PipeMetadata | PipeableOperatorMetadata | ObservableMetadata | SubscriberMetadata | Event<T> | SubscribeEvent<T>;
 
 enum MessageType {
     observable = 'observable',
     pipe = 'pipe',
     oprator = 'operator',
     subscribe = 'subscribe',
+    subscribeEvent = 'subscribeEvent',
     event = 'event'
 }
 
@@ -26,9 +33,7 @@ interface Message<T> {
 
 // Send given message to the backpage.
 const sendToBackpage = <T>(message: Message<T>): void => {
-    // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message },
-    //     function (response) {
-    //     });
+    // chrome.runtime.sendMessage('ichhimaffbaddaokkjkjmlfnbcfkdgih', { detail: message }); 
     chrome.runtime.sendMessage('bgnfinkadkldidemlpeclbennfalaioa', { detail: message });
 };
 
@@ -95,12 +100,21 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 // Wrap and return pipe statement.
 export const wrapPipe = <T>(source$: Observable<T>, metadata: PipeMetadata, ...operators: []) => {
     console.log(`wrapped pipe identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
+    const message = createPayloadMessage(metadata, MessageType.pipe);
+    sendToBackpage(message);
     return source$.pipe(...operators);
 };
 
 type Next<T> = (data: T) => void;
 type Error<E> = (error: E) => void;
 type Complete = () => void;
+
+// Create SubscribeEvent payload message.
+const createSubscribeEventMessage = <T>(type: SubscribeEvent<T>['type'], data: T, observable: string) => {
+    const subscribeEvent: SubscribeEvent<T> = { type, data, observable };
+    const message = createPayloadMessage(subscribeEvent, MessageType.subscribeEvent);
+    return message;
+};
 
 // Wrap subscribe and its optional next, error and complete arguments.
 export const wrapSubscribe = <T, E>(
@@ -110,11 +124,16 @@ export const wrapSubscribe = <T, E>(
     error?: Error<E>,
     complete?: Complete
 ): Subscription => {
-    console.log(`wrapped subscribe ${metadata.observable}`);
+    console.log(`wrapped subscribe ${metadata.observable} pipe ${metadata.pipes[0]}`);
+    const message = createPayloadMessage(metadata, MessageType.subscribe);
+    sendToBackpage(message);
+
     let [wrappedNext, wrappedError, wrappedComplete] = [null, null, null];
 
     if (next) {
         wrappedNext = (event: T) => {
+            const eventMessage = createSubscribeEventMessage('NEXT', event, metadata.observable);
+            sendToBackpage(eventMessage);
             console.log('wrapped next');
             return next(event);
         };
@@ -122,6 +141,8 @@ export const wrapSubscribe = <T, E>(
 
     if (error) {
         wrappedError = (err: E) => {
+            const errMessage = createSubscribeEventMessage('ERROR', err, metadata.observable);
+            sendToBackpage(errMessage);
             console.log('wrapped error');
             return error(err);
         };
@@ -129,6 +150,8 @@ export const wrapSubscribe = <T, E>(
 
     if (complete) {
         wrappedComplete = () => {
+            const completeMessage = createSubscribeEventMessage('COMPLETE', null, metadata.observable);
+            sendToBackpage(completeMessage);
             console.log('wrapped complete');
             return complete();
         };
