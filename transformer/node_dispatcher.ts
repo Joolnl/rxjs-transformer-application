@@ -4,8 +4,7 @@ import { createWrapCreationExpression, wrapSubscribeMethod, wrapPipeStatement } 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
-type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE' |
-    'RXJS_PIPE_EXPR_STMT' | 'RXJS_PIPE_VAR_DECL' | 'RXJS_SUBSCRIBE';
+type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): boolean => {
