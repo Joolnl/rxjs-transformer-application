@@ -8,3 +8,4 @@ Messages are sent as objects to the chrome extension through the chrome.runtime 
 
 The communication protocol between the rxjs_wrapper and the chrome extension is
 to use sanitized objects adhering the following interface:
+![image of message interface](https://i.imgur.com/yDYbiDm.jpg)
