@@ -35,7 +35,7 @@ const isMethodCall = (node: ts.Node, method: string): boolean => {
 // Check if node is pipe property access expression.
 const isPipePropertyAccessExpr = (node: ts.Node): boolean => {
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-        return node.expression.name.getText() === 'pipe' ? true : false;
+        return node.expression.name.getText() === 'pipe';
     }
     return false;
 };

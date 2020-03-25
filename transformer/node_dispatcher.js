@@ -21,7 +21,7 @@ var isMethodCall = function (node, method) {
         var result = node.getChildren()
             .filter(function (child) { return ts.isPropertyAccessExpression(child); })
             .filter(function (child) { return child.name.getText() === method; });
-        return result.length ? true : false;
+        return result.length > 0;
     }
     catch (e) {
         return false;
@@ -30,7 +30,7 @@ var isMethodCall = function (node, method) {
 // Check if node is pipe property access expression.
 var isPipePropertyAccessExpr = function (node) {
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-        return node.expression.name.getText() === 'pipe' ? true : false;
+        return node.expression.name.getText() === 'pipe';
     }
     return false;
 };
@@ -42,10 +42,10 @@ var classify = function (node) {
     if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
     }
-    if (isPipePropertyAccessExpr(node)) {
+    else if (isPipePropertyAccessExpr(node)) {
         classification = 'RXJS_PIPE';
     }
-    if (isSubscribeStatement(node)) {
+    else if (isSubscribeStatement(node)) {
         classification = 'RXJS_SUBSCRIBE';
     }
     return classification;
