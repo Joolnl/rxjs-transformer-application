@@ -4,10 +4,17 @@ import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberM
 import { pipeFromArray } from 'rxjs/internal/util/pipe';
 declare var chrome;
 
+enum EventType {
+    initial = 'initial',
+    operator = 'operator',
+    subscribe = 'subscribe'
+}
+
 interface Event<T> {
+    id: number;
     data: T;
-    observable: string;
-    uuid: number;
+    receiver: string;
+    type: EventType;
 }
 
 enum SubscribeEventType {
@@ -55,17 +62,17 @@ class Box<T> {
 
 let simpleLastUid = 0;
 
-const createEvent = <T>(data: T, observable: string, uuid: number): Event<T> => {
-    return { data, observable, uuid };
+const createEvent = <T>(id: number, data: T, receiver: string, type: EventType): Event<T> => {
+    return { id, data, receiver, type };
 };
 
 // Unpack given box or event;
-const unpack = <T>(event: T | Box<T>, observable: string): { id: number, event: T } => {
+const unpack = <T>(event: T | Box<T>, pipe: string): { id: number, event: T } => {
     if (event instanceof Box) {
         return { id: event.id, event: event.value };
     } else {
         const id = simpleLastUid++;
-        const initialEventMessage = createPayloadMessage<T>(createEvent(event, observable, id), MessageType.event);
+        const initialEventMessage = createPayloadMessage<T>(createEvent(id, event, pipe, EventType.initial), MessageType.event);
         sendToBackpage(initialEventMessage);
         return { id, event };
     }
@@ -89,13 +96,13 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 
         let id: number;
         return source$.pipe(
-            map(e => unpack(e, metadata.observable)),
+            map(e => unpack(e, metadata.pipe)),
             map(e => {
                 id = e.id;
                 return e.event;
             }),
             operatorFn,
-            tap(e => sendToBackpage(createPayloadMessage<T>(createEvent(e, metadata.observable, id), MessageType.event))),
+            tap(e => sendToBackpage(createPayloadMessage<T>(createEvent(id, e, metadata.uuid, EventType.operator), MessageType.event))),
             tap(e => console.log(`${e} ${metadata.observable} ${id}`)),
             map(e => last ? e : new Box<T>(e, id))
         );
