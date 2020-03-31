@@ -20,6 +20,7 @@ export interface PipeMetadata {
 
 export interface PipeableOperatorMetadata {
     type: string;
+    uuid: string;
     function: string;
     observable: string;
     pipe: string;
@@ -107,6 +108,7 @@ export const createPipeMetadataExpression = (
 // Create operator metadata object literal.
 export const createPipeableOperatorMetadataExpression = (
     node: ts.CallExpression,
+    operatorUUID: string,
     pipeUUID: string,
     observableUUID: string
 ): ts.ObjectLiteralExpression => {
@@ -116,6 +118,7 @@ export const createPipeableOperatorMetadataExpression = (
 
     return ts.createObjectLiteral([
         createProperty('type', operator),
+        createProperty('uuid', operatorUUID),
         createProperty('function', functionBody),
         createProperty('observable', observableUUID),
         createProperty('pipe', pipeUUID),

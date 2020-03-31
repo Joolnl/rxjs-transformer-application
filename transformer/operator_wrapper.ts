@@ -3,6 +3,7 @@ import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
   createSubscriberMetadataExpression, createPipeMetadataExpression
 } from './metadata';
+import * as uuid from 'uuid/v4';
 
 type WrappedCallExpressionFn = (a: string, b: string, c?: ts.Expression[]) => ts.CallExpression;
 
@@ -37,7 +38,7 @@ const wrapPipeableOperatorArray = (
   }
 
   const createWrapper = (pipeOperator: ts.CallExpression, last: boolean) => {
-    const metadata = createPipeableOperatorMetadataExpression(pipeOperator, pipeUUID, observableUUID);
+    const metadata = createPipeableOperatorMetadataExpression(pipeOperator, uuid(), pipeUUID, observableUUID);
     return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
   };
 
