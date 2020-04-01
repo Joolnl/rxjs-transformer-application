@@ -4,12 +4,16 @@ import { createWrapCreationExpression, wrapSubscribeMethod, wrapPipeStatement } 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
 
+const rxjsJoinCreationOperators = ['combineLatest', 'concat', 'forkJoin', 'merge', 'race', 'zip'];
+
 type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_OPERATOR' | 'RXJS_PIPE' | 'RXJS_SUBSCRIBE';
 
 // Determine if given node is RxJS Creation Operator Statement.
 const isRxJSCreationOperator = (node: ts.Node): boolean => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
-        return rxjsCreationOperators.some(operator => operator === node.expression.getText());
+        return rxjsCreationOperators
+            .concat(rxjsJoinCreationOperators)
+            .some(operator => operator === node.expression.getText());
     }
     return false;
 };

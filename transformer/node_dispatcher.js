@@ -4,10 +4,13 @@ var ts = require("typescript");
 var operator_wrapper_1 = require("./operator_wrapper");
 var rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
+var rxjsJoinCreationOperators = ['combineLatest', 'concat', 'forkJoin', 'merge', 'race', 'zip'];
 // Determine if given node is RxJS Creation Operator Statement.
 var isRxJSCreationOperator = function (node) {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
-        return rxjsCreationOperators.some(function (operator) { return operator === node.expression.getText(); });
+        return rxjsCreationOperators
+            .concat(rxjsJoinCreationOperators)
+            .some(function (operator) { return operator === node.expression.getText(); });
     }
     return false;
 };

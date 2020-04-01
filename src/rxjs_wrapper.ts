@@ -81,7 +81,7 @@ const unpack = <T>(event: T | Box<T>, pipe: string): { id: number, event: T } =>
 
 // Wrap creation operator and return it, send data to backpage.
 export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) => U, metadata: ObservableMetadata) => (...args: T) => {
-    console.log('Wrapped creation operator ', metadata.identifier);
+    console.log('Wrapped creation operator ', metadata.identifier, metadata.uuid);
     const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
     return fn(...args);
@@ -90,7 +90,7 @@ export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) =
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => {
     return (source$: Observable<T>) => {
-        console.log(`wrapPipeableOperator ${metadata.line} ${metadata.function} ${metadata.observable}`);
+        // console.log(`wrapPipeableOperator ${metadata.line} ${metadata.function} ${metadata.pipe}`);
         const message = createPayloadMessage(metadata, MessageType.operator);
         sendToBackpage(message);
 
@@ -111,8 +111,8 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 
 // Wrap and return pipe statement.
 export const wrapPipe = <T>(source$: Observable<T>, metadata: PipeMetadata, ...operators: OperatorFunction<T, any>[]) => {
-    console.log(`wrapped pipe identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
-    console.log(operators);
+    // console.log(`wrapped pipe identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
+    // console.log(operators);
     const message = createPayloadMessage(metadata, MessageType.pipe);
     sendToBackpage(message);
     return pipeFromArray([...operators])(source$);
@@ -138,7 +138,7 @@ export const wrapSubscribe = <T, E>(
     error?: Error<E>,
     complete?: Complete
 ): Subscription => {
-    console.log(`wrapped subscribe ${metadata.observable} pipe ${metadata.pipes[0]}`);
+    console.log(`wrapped subscribe line ${metadata.line} observable: ${metadata.observable} pipe ${metadata.pipes[0]}`);
     const message = createPayloadMessage(metadata, MessageType.subscribe);
     sendToBackpage(message);
 

@@ -66,12 +66,13 @@ exports.createPipeMetadataExpression = function (node, identifier, variableName)
     return [objectLiteral, uuid, observableUUID];
 };
 // Create operator metadata object literal.
-exports.createPipeableOperatorMetadataExpression = function (node, pipeUUID, observableUUID) {
+exports.createPipeableOperatorMetadataExpression = function (node, operatorUUID, pipeUUID, observableUUID) {
     var operator = node.expression.getText();
     var functionBody = node.arguments.map(function (arg) { return arg.getText(); }).join('');
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
     return ts.createObjectLiteral([
         createProperty('type', operator),
+        createProperty('uuid', operatorUUID),
         createProperty('function', functionBody),
         createProperty('observable', observableUUID),
         createProperty('pipe', pipeUUID),

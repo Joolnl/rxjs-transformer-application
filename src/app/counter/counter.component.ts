@@ -57,7 +57,6 @@ export class CounterComponent implements AfterViewInit {
     ), substract.pipe(map(() => -1)))
       .pipe(scan((acc, curr) => acc += curr))
       .subscribe(i => this.counter = i);
-
   }
 
 }

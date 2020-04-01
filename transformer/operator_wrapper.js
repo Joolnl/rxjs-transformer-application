@@ -9,6 +9,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 exports.__esModule = true;
 var ts = require("typescript");
 var metadata_1 = require("./metadata");
+var uuid = require("uuid/v4");
 // Returns an expression with given wrapperName wrapping given expression as argument.
 var createWrappedCallExpression = function (wrapperName, innerName, args) {
     var wrapIdentifier = ts.createIdentifier(wrapperName);
@@ -33,7 +34,7 @@ var wrapPipeableOperatorArray = function (args, pipeUUID, observableUUID) {
         throw new Error('Can not wrap pipe operators, invalid NodeArray!');
     }
     var createWrapper = function (pipeOperator, last) {
-        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator, pipeUUID, observableUUID);
+        var metadata = metadata_1.createPipeableOperatorMetadataExpression(pipeOperator, uuid(), pipeUUID, observableUUID);
         return ts.createCall(ts.createIdentifier('wrapPipeableOperator'), undefined, [pipeOperator, ts.createLiteral(last), metadata]);
     };
     var isLast = function (index) { return args.length - 1 === index; };
