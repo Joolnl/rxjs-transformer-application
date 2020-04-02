@@ -9,7 +9,14 @@ var rxjsJoinCreationOperators = ['combineLatest', 'concat', 'forkJoin', 'merge',
 var isRxJSCreationOperator = function (node) {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
         return rxjsCreationOperators
-            .concat(rxjsJoinCreationOperators)
+            .some(function (operator) { return operator === node.expression.getText(); });
+    }
+    return false;
+};
+// Determine if given node is RxJS Join Creation Operator Statement.
+var isRxJSJoinCreationOperator = function (node) {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
+        return rxjsJoinCreationOperators
             .some(function (operator) { return operator === node.expression.getText(); });
     }
     return false;

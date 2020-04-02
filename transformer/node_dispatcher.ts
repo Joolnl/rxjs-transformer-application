@@ -12,7 +12,15 @@ type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_
 const isRxJSCreationOperator = (node: ts.Node): boolean => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
         return rxjsCreationOperators
-            .concat(rxjsJoinCreationOperators)
+            .some(operator => operator === node.expression.getText());
+    }
+    return false;
+};
+
+// Determine if given node is RxJS Join Creation Operator Statement.
+const isRxJSJoinCreationOperator = (node: ts.Node): boolean => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
+        return rxjsJoinCreationOperators
             .some(operator => operator === node.expression.getText());
     }
     return false;
