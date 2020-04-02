@@ -66,7 +66,7 @@ exports.createJoinObservableMetadataExpression = function (node, call, variableN
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('type', node.getText()),
-        createProperty('observables', ts.createArrayLiteral(__spreadArrays(baseObservables))),
+        ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
         createProperty('identifier', variableName),
         createProperty('file', file),
         createProperty('line', line)

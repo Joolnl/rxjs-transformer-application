@@ -10,6 +10,16 @@ export interface ObservableMetadata {
     pos?: number;
 }
 
+export interface JoinObservableMetadata {
+    uuid: string;
+    type?: string;
+    observables: Array<string>;
+    identifier: string;
+    file: string;
+    line: number;
+    pos?: number;
+}
+
 export interface PipeMetadata {
     uuid: string;
     observable: string;
@@ -107,7 +117,7 @@ export const createJoinObservableMetadataExpression = (
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('type', node.getText()),
-        createProperty('observables', ts.createArrayLiteral([...baseObservables])),
+        ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
         createProperty('identifier', variableName),
         createProperty('file', file),
         createProperty('line', line)

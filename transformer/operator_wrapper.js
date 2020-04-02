@@ -35,7 +35,9 @@ exports.createWrapJoinCreationExpression = function (node) {
         ? node.parent.name.getText()
         : 'anonymous';
     var metaDataExpression = metadata_1.createJoinObservableMetadataExpression(identifier, node, variableName);
-    return node; // TODO: return mutated node.
+    var curriedCall = createWrappedCallExpression('wrapJoinCreationOperator', identifier.getText(), [metaDataExpression]);
+    var completeCall = ts.createCall(curriedCall, undefined, node.arguments);
+    return completeCall;
 };
 // Wrap array of pipeable operators.
 var wrapPipeableOperatorArray = function (args, pipeUUID, observableUUID) {

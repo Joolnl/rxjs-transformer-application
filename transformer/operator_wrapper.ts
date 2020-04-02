@@ -34,7 +34,9 @@ export const createWrapJoinCreationExpression = (node: ts.CallExpression): ts.Ca
     ? node.parent.name.getText()
     : 'anonymous';
   const metaDataExpression = createJoinObservableMetadataExpression(identifier, node, variableName);
-  return node; // TODO: return mutated node.
+  const curriedCall = createWrappedCallExpression('wrapJoinCreationOperator', identifier.getText(), [metaDataExpression]);
+  const completeCall = ts.createCall(curriedCall, undefined, node.arguments);
+  return completeCall;
 };
 
 // Wrap array of pipeable operators.

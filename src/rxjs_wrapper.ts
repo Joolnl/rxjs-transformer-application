@@ -1,6 +1,8 @@
 import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata } from '../transformer/metadata';
+import {
+    PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata, JoinObservableMetadata
+} from '../transformer/metadata';
 import { pipeFromArray } from 'rxjs/internal/util/pipe';
 declare var chrome;
 
@@ -84,6 +86,15 @@ export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) =
     console.log('Wrapped creation operator ', metadata.identifier, metadata.uuid);
     const message = createPayloadMessage(metadata, MessageType.observable);
     sendToBackpage(message);
+    return fn(...args);
+};
+
+// Wrap join creation operator and return it, send data to backpage.
+export const wrapJoinCreationOperator = <T extends Array<any>, U>(
+    fn: (...args: T) => U,
+    metadata: JoinObservableMetadata
+) => (...args: T) => {
+    console.log('Wrapped join creation operator.');
     return fn(...args);
 };
 
