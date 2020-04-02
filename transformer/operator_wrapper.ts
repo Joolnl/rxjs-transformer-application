@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
-  createSubscriberMetadataExpression, createPipeMetadataExpression
+  createSubscriberMetadataExpression, createPipeMetadataExpression, createJoinObservableMetadataExpression
 } from './metadata';
 import * as uuid from 'uuid/v4';
 
@@ -25,6 +25,16 @@ export const createWrapCreationExpression = (node: ts.CallExpression): ts.CallEx
   const curriedCall = createWrappedCallExpression('wrapCreationOperator', identifier.getText(), [metaDataExpression]);
   const completeCall = ts.createCall(curriedCall, undefined, node.arguments);
   return completeCall;
+};
+
+// Create wrapped RxJS join creation operator expression.
+export const createWrapJoinCreationExpression = (node: ts.CallExpression): ts.CallExpression => {
+  const identifier: ts.Identifier = node.expression as ts.Identifier;
+  const variableName = ts.isVariableDeclaration(node.parent)
+    ? node.parent.name.getText()
+    : 'anonymous';
+  const metaDataExpression = createJoinObservableMetadataExpression(identifier, node, variableName);
+  return node; // TODO: return mutated node.
 };
 
 // Wrap array of pipeable operators.

@@ -39,6 +39,7 @@ export class CounterComponent implements AfterViewInit {
       tap(() => console.log('test'))
     );
 
+    merge(of(1), of(2));
     // const piped2 = piped.pipe(map(x => 1));
 
     // piped.subscribe(x => console.log(x));

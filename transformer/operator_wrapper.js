@@ -28,6 +28,15 @@ exports.createWrapCreationExpression = function (node) {
     var completeCall = ts.createCall(curriedCall, undefined, node.arguments);
     return completeCall;
 };
+// Create wrapped RxJS join creation operator expression.
+exports.createWrapJoinCreationExpression = function (node) {
+    var identifier = node.expression;
+    var variableName = ts.isVariableDeclaration(node.parent)
+        ? node.parent.name.getText()
+        : 'anonymous';
+    var metaDataExpression = metadata_1.createJoinObservableMetadataExpression(identifier, node, variableName);
+    return node; // TODO: return mutated node.
+};
 // Wrap array of pipeable operators.
 var wrapPipeableOperatorArray = function (args, pipeUUID, observableUUID) {
     if (!args.every(function (operator) { return ts.isCallExpression(operator); })) {

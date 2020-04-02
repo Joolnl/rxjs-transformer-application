@@ -35,6 +35,43 @@ exports.createObservableMetadataExpression = function (node, variableName) {
         createProperty('line', line)
     ]);
 };
+// Get the base observables from join observable.
+var getBaseObservables = function (node) {
+    if (node.arguments === undefined) {
+        return [];
+    }
+    // Recursively get observable names.
+    var getIdentifier = function (argNode) {
+        if (ts.isPropertyAccessExpression(argNode) || ts.isCallExpression(argNode)) {
+            return getIdentifier(argNode.expression);
+        }
+        else if (ts.isIdentifier) {
+            if (ts.isCallExpression(argNode.parent)) { // Anonymous observable.
+                return null;
+            }
+            return argNode.getText();
+        }
+    };
+    var observables = node.arguments
+        .map(function (arg) { return getIdentifier(arg); })
+        .filter(function (arg) { return arg; });
+    return observables;
+};
+// Create metadata object literal from join observable.
+exports.createJoinObservableMetadataExpression = function (node, call, variableName) {
+    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line, pos = _a.pos;
+    var uuid = generateId(file, line, pos);
+    var baseObservables = getBaseObservables(call)
+        .map(function (observable) { return ts.createStringLiteral(observable); });
+    return ts.createObjectLiteral([
+        createProperty('uuid', uuid),
+        createProperty('type', node.getText()),
+        createProperty('observables', ts.createArrayLiteral(__spreadArrays(baseObservables))),
+        createProperty('identifier', variableName),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
+};
 // Traverse tree until observable is found.
 var getObservable = function (node) {
     if (ts.isPropertyAccessExpression(node) || ts.isCallExpression(node)) {

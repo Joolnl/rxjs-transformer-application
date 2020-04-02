@@ -52,6 +52,9 @@ var classify = function (node) {
     if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
     }
+    else if (isRxJSJoinCreationOperator(node)) {
+        classification = 'RXJS_JOIN_CREATION_OPERATOR';
+    }
     else if (isPipePropertyAccessExpr(node)) {
         classification = 'RXJS_PIPE';
     }
@@ -69,6 +72,9 @@ exports.dispatchNode = function (node) {
         case 'RXJS_CREATION_OPERATOR':
             node = operator_wrapper_1.createWrapCreationExpression(node);
             return [node, 'wrapCreationOperator'];
+        case 'RXJS_JOIN_CREATION_OPERATOR':
+            node = operator_wrapper_1.createWrapJoinCreationExpression(node);
+            return [node, 'wrapJoinCreationOperator'];
         case 'RXJS_PIPE':
             node = operator_wrapper_1.wrapPipeStatement(node);
             return [node, 'wrapPipe'];
