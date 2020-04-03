@@ -96,7 +96,7 @@ export const wrapJoinCreationOperator = <T extends Array<any>, U>(
     fn: (...args: T) => U,
     metadata: JoinObservableMetadata
 ) => (...args: T) => {
-    console.log('Wrapped join creation operator.');
+    console.log(`Wrapped join creation operator. ${metadata.identifier} ${metadata.line}`);
     metadata.observables.map(observable => console.log(`with base observable ${observable}`));
     const message = createPayloadMessage(metadata, MessageType.joinObservable);
     sendToBackpage(message);

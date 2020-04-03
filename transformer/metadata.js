@@ -46,7 +46,8 @@ var getBaseObservables = function (node) {
             if (ts.isCallExpression(argNode.parent)) { // Anonymous observable.
                 return null;
             }
-            return argNode.getText();
+            var _a = exports.extractMetadata(namedObservables.get(argNode.getText())), file = _a.file, line = _a.line, pos = _a.pos;
+            return generateId(file, line, pos);
         }
     };
     var observables = node.arguments

@@ -97,7 +97,8 @@ const getBaseObservables = (node: ts.CallExpression): Array<string> => {
             if (ts.isCallExpression(argNode.parent)) {  // Anonymous observable.
                 return null;
             }
-            return argNode.getText();
+            const { file, line, pos } = extractMetadata(namedObservables.get(argNode.getText()));
+            return generateId(file, line, pos);
         }
     };
 
