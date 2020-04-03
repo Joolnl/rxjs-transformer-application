@@ -83,30 +83,58 @@ export const createObservableMetadataExpression = (node: ts.Identifier, variable
     ]);
 };
 
+interface BaseObservable {
+    uuid: string;
+    identifier?: string;
+    type: string;
+}
+
 // Get the base observables from join observable.
-const getBaseObservables = (node: ts.CallExpression): Array<string> => {
+const getBaseObservables = (node: ts.CallExpression): Array<BaseObservable> => {
     if (node.arguments === undefined) {
         return [];
     }
 
     // Recursively get observable names.
-    const getIdentifier = (argNode: ts.Expression): string | null => {
+    const getBaseObservable = (argNode: ts.Expression): BaseObservable | null => {
         if (ts.isPropertyAccessExpression(argNode) || ts.isCallExpression(argNode)) {
-            return getIdentifier(argNode.expression);
+            return getBaseObservable(argNode.expression);
         } else if (ts.isIdentifier) {
             if (ts.isCallExpression(argNode.parent)) {  // Anonymous observable.
-                return null;
+                const { file, line, pos } = extractMetadata(argNode);
+                const uuid = generateId(file, line, pos);
+                const type = argNode.getText();
+                return { uuid, type };
+            } else {
+                const { file, line, pos } = extractMetadata(namedObservables.get(argNode.getText()));
+                const uuid = generateId(file, line, pos);
+                const name = argNode.getText();
+                return { uuid, identifier: name, type: 'of' };
             }
-            const { file, line, pos } = extractMetadata(namedObservables.get(argNode.getText()));
-            return generateId(file, line, pos);
         }
     };
 
     const observables = node.arguments
-        .map(arg => getIdentifier(arg))
+        .map(arg => getBaseObservable(arg))
         .filter(arg => arg);
 
     return observables;
+};
+
+// Create array literal containing object literals from BaseObservable array.
+const createBaseObservableArrayLiteral = (baseObservables: Array<BaseObservable>): ts.ArrayLiteralExpression => {
+    const createBaseObservableObjectLiteral = (observable: BaseObservable): ts.ObjectLiteralExpression => {
+        return ts.createObjectLiteral([
+            createProperty('uuid', observable.uuid),
+            createProperty('identifier', observable.identifier),
+            createProperty('type', observable.type)
+        ]);
+    };
+
+    return ts.createArrayLiteral(
+        baseObservables
+            .map(observable => createBaseObservableObjectLiteral(observable))
+    );
 };
 
 // Create metadata object literal from join observable.
@@ -117,13 +145,15 @@ export const createJoinObservableMetadataExpression = (
 ): ts.ObjectLiteralExpression => {
     const { file, line, pos } = extractMetadata(node);
     const uuid = generateId(file, line, pos);
-    const baseObservables = getBaseObservables(call)
-        .map(observable => ts.createStringLiteral(observable));
+    // const baseObservables = getBaseObservables(call)
+    //     .map(observable => ts.createStringLiteral(observable));
+    const baseObservables = createBaseObservableArrayLiteral(getBaseObservables(call));
 
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('type', node.getText()),
-        ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
+        // ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
+        ts.createPropertyAssignment('observables', baseObservables),
         createProperty('identifier', variableName),
         createProperty('file', file),
         createProperty('line', line)

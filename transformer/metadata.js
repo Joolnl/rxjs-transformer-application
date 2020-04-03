@@ -38,33 +38,54 @@ var getBaseObservables = function (node) {
         return [];
     }
     // Recursively get observable names.
-    var getIdentifier = function (argNode) {
+    var getBaseObservable = function (argNode) {
         if (ts.isPropertyAccessExpression(argNode) || ts.isCallExpression(argNode)) {
-            return getIdentifier(argNode.expression);
+            return getBaseObservable(argNode.expression);
         }
         else if (ts.isIdentifier) {
             if (ts.isCallExpression(argNode.parent)) { // Anonymous observable.
-                return null;
+                var _a = exports.extractMetadata(argNode), file = _a.file, line = _a.line, pos = _a.pos;
+                var uuid = generateId(file, line, pos);
+                var type = argNode.getText();
+                return { uuid: uuid, type: type };
             }
-            var _a = exports.extractMetadata(namedObservables.get(argNode.getText())), file = _a.file, line = _a.line, pos = _a.pos;
-            return generateId(file, line, pos);
+            else {
+                var _b = exports.extractMetadata(namedObservables.get(argNode.getText())), file = _b.file, line = _b.line, pos = _b.pos;
+                var uuid = generateId(file, line, pos);
+                var name_1 = argNode.getText();
+                return { uuid: uuid, identifier: name_1, type: 'of' };
+            }
         }
     };
     var observables = node.arguments
-        .map(function (arg) { return getIdentifier(arg); })
+        .map(function (arg) { return getBaseObservable(arg); })
         .filter(function (arg) { return arg; });
     return observables;
+};
+// Create array literal containing object literals from BaseObservable array.
+var createBaseObservableArrayLiteral = function (baseObservables) {
+    var createBaseObservableObjectLiteral = function (observable) {
+        return ts.createObjectLiteral([
+            createProperty('uuid', observable.uuid),
+            createProperty('identifier', observable.identifier),
+            createProperty('type', observable.type)
+        ]);
+    };
+    return ts.createArrayLiteral(baseObservables
+        .map(function (observable) { return createBaseObservableObjectLiteral(observable); }));
 };
 // Create metadata object literal from join observable.
 exports.createJoinObservableMetadataExpression = function (node, call, variableName) {
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line, pos = _a.pos;
     var uuid = generateId(file, line, pos);
-    var baseObservables = getBaseObservables(call)
-        .map(function (observable) { return ts.createStringLiteral(observable); });
+    // const baseObservables = getBaseObservables(call)
+    //     .map(observable => ts.createStringLiteral(observable));
+    var baseObservables = createBaseObservableArrayLiteral(getBaseObservables(call));
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('type', node.getText()),
-        ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
+        // ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
+        ts.createPropertyAssignment('observables', baseObservables),
         createProperty('identifier', variableName),
         createProperty('file', file),
         createProperty('line', line)
