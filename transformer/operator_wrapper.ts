@@ -79,7 +79,7 @@ export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression =>
 export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression => {
   const args = node.arguments.map(arg => arg);  // ts.NodeArray => array.
   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
-  const source$ = propertyAccessExpr.expression;
+  const source$: ts.Identifier = propertyAccessExpr.expression as ts.Identifier;
   const metadata = createSubscriberMetadataExpression(node);
 
   return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, [source$, metadata, ...args]);

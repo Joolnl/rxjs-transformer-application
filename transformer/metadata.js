@@ -1,14 +1,8 @@
 "use strict";
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 exports.__esModule = true;
 var ts = require("typescript");
 var v5 = require("uuid/v5");
+var namedObservables = new Map();
 var namedPipes = new Map();
 // Generate unique id from seed: filename, line and pos.
 var generateId = function (filename, line, pos) {
@@ -27,6 +21,9 @@ var createProperty = function (name, value) { return ts.createPropertyAssignment
 exports.createObservableMetadataExpression = function (node, variableName) {
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line, pos = _a.pos;
     var uuid = generateId(file, line, pos);
+    if (variableName !== 'anonymous') {
+        namedObservables.set(variableName, node);
+    }
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('type', node.getText()),
@@ -73,11 +70,15 @@ exports.createJoinObservableMetadataExpression = function (node, call, variableN
     ]);
 };
 // Traverse tree until observable is found.
-var getObservable = function (node) {
+var getObservable = function (node, subscribe) {
+    if (subscribe === void 0) { subscribe = false; }
     if (ts.isPropertyAccessExpression(node) || ts.isCallExpression(node)) {
-        return getObservable(node.expression);
+        return getObservable(node.expression, subscribe);
     }
     else if (ts.isIdentifier(node)) {
+        if (subscribe && ts.isPropertyAccessExpression(node.parent)) {
+            return namedObservables.get(node.getText());
+        }
         return node;
     }
     else {
@@ -131,12 +132,8 @@ var getPipeArray = function (node, pipes) {
     }
     return result;
 };
-// Create subscribe metadata object literal.
-exports.createSubscriberMetadataExpression = function (node) {
-    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
-    var observableMetadata = exports.extractMetadata(getObservable(node));
-    var observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
-    var pipes = getPipeArray(node);
+// Create Array Literal Property from given pipes with given attribute name.
+var createArrayLiteralProperty = function (name, pipes) {
     // Generate UUID for anonymous pipes.
     var anonymousPipes = pipes
         .filter(function (pipe) { return pipe.anonymous; })
@@ -149,9 +146,21 @@ exports.createSubscriberMetadataExpression = function (node) {
         .map(function (pipe) { return pipe.node; })
         .map(function (pipeNode) { return pipeNode.getText(); })
         .map(function (pipeName) { return namedPipes.get(pipeName); });
+    // Join arrays and filter null-type values.
+    var pipeLiterals = anonymousPipes.concat(nonAnonymousPipes)
+        .filter(function (pipe) { return pipe; })
+        .map(function (pipe) { return ts.createStringLiteral(pipe); });
+    return ts.createPropertyAssignment(name, ts.createArrayLiteral(pipeLiterals));
+};
+// Create subscribe metadata object literal.
+exports.createSubscriberMetadataExpression = function (node) {
+    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
+    var observableMetadata = exports.extractMetadata(getObservable(node, true));
+    var observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
+    var pipes = createArrayLiteralProperty('pipes', getPipeArray(node));
     return ts.createObjectLiteral([
         createProperty('observable', observableUUID),
-        ts.createPropertyAssignment('pipes', ts.createArrayLiteral(__spreadArrays(anonymousPipes.concat(nonAnonymousPipes).map(function (pipe) { return ts.createStringLiteral(pipe); })))),
+        pipes,
         createProperty('function', 'testFn'),
         createProperty('file', file),
         createProperty('line', line)

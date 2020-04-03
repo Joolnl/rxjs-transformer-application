@@ -39,7 +39,7 @@ export class CounterComponent implements AfterViewInit {
       tap(() => console.log('test'))
     );
 
-    merge(of(1), of(2));
+    merge(of(1), of(2)).subscribe(x =>  console.log(x));
     // const piped2 = piped.pipe(map(x => 1));
 
     // piped.subscribe(x => console.log(x));
@@ -51,6 +51,10 @@ export class CounterComponent implements AfterViewInit {
     //   merge(substract.pipe(map(() => -1))),  // map events from substract to -1 and merge with add stream.
     //   scan((acc, curr) => acc += curr)        // accumulate values.
     // ).subscribe(i => this.counter = i);
+
+    const subscribeTest = of(1);
+
+    subscribeTest.pipe(map(() => 2)).subscribe();
 
     merge(add.pipe(
       tap(null),

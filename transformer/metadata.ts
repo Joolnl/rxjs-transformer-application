@@ -46,6 +46,7 @@ export interface SubscriberMetadata {
     line: number;
 }
 
+const namedObservables = new Map<string, ts.Identifier>();
 const namedPipes = new Map<string, string>();
 
 // Generate unique id from seed: filename, line and pos.
@@ -68,6 +69,10 @@ const createProperty = (name: string, value: any) => ts.createPropertyAssignment
 export const createObservableMetadataExpression = (node: ts.Identifier, variableName: string): ts.ObjectLiteralExpression => {
     const { file, line, pos } = extractMetadata(node);
     const uuid = generateId(file, line, pos);
+
+    if (variableName !== 'anonymous') {
+        namedObservables.set(variableName, node);
+    }
 
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
@@ -125,10 +130,13 @@ export const createJoinObservableMetadataExpression = (
 };
 
 // Traverse tree until observable is found.
-const getObservable = (node: ts.Expression): ts.Identifier => {
+const getObservable = (node: ts.Expression, subscribe = false): ts.Identifier => {
     if (ts.isPropertyAccessExpression(node) || ts.isCallExpression(node)) {
-        return getObservable(node.expression);
+        return getObservable(node.expression, subscribe);
     } else if (ts.isIdentifier(node)) {
+        if (subscribe && ts.isPropertyAccessExpression(node.parent)) {
+            return namedObservables.get(node.getText());
+        }
         return node;
     } else {
         throw new Error('No Observable found!');
@@ -203,13 +211,8 @@ const getPipeArray = (node: ts.Expression, pipes?: Array<Pipe>): Array<Pipe> => 
     return result;
 };
 
-// Create subscribe metadata object literal.
-export const createSubscriberMetadataExpression = (node: ts.CallExpression): ts.ObjectLiteralExpression => {
-    const { file, line } = extractMetadata(node);
-    const observableMetadata = extractMetadata(getObservable(node));
-    const observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
-
-    const pipes = getPipeArray(node);
+// Create Array Literal Property from given pipes with given attribute name.
+const createArrayLiteralProperty = (name: string, pipes: Array<Pipe>): ts.PropertyAssignment => {
     // Generate UUID for anonymous pipes.
     const anonymousPipes = pipes
         .filter(pipe => pipe.anonymous)
@@ -224,11 +227,24 @@ export const createSubscriberMetadataExpression = (node: ts.CallExpression): ts.
         .map(pipeNode => pipeNode.getText())
         .map(pipeName => namedPipes.get(pipeName));
 
+    // Join arrays and filter null-type values.
+    const pipeLiterals = anonymousPipes.concat(nonAnonymousPipes)
+        .filter(pipe => pipe)
+        .map(pipe => ts.createStringLiteral(pipe));
+
+    return ts.createPropertyAssignment(name, ts.createArrayLiteral(pipeLiterals));
+};
+
+// Create subscribe metadata object literal.
+export const createSubscriberMetadataExpression = (node: ts.CallExpression): ts.ObjectLiteralExpression => {
+    const { file, line } = extractMetadata(node);
+    const observableMetadata = extractMetadata(getObservable(node, true));
+    const observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
+    const pipes = createArrayLiteralProperty('pipes', getPipeArray(node));
+
     return ts.createObjectLiteral([
         createProperty('observable', observableUUID),
-        ts.createPropertyAssignment('pipes',
-            ts.createArrayLiteral([...anonymousPipes.concat(nonAnonymousPipes).map(pipe => ts.createStringLiteral(pipe))])
-        ),
+        pipes,
         createProperty('function', 'testFn'),
         createProperty('file', file),
         createProperty('line', line)

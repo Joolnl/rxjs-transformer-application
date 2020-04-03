@@ -31,10 +31,12 @@ interface SubscribeEvent<T> {
     observable: string;
 }
 
-type Payload<T> = PipeMetadata | PipeableOperatorMetadata | ObservableMetadata | SubscriberMetadata | Event<T> | SubscribeEvent<T>;
+type Payload<T> = PipeMetadata | PipeableOperatorMetadata | ObservableMetadata | JoinObservableMetadata
+    | SubscriberMetadata | Event<T> | SubscribeEvent<T>;
 
 enum MessageType {
     observable = 'observable',
+    joinObservable = 'joinObservable',
     pipe = 'pipe',
     operator = 'operator',
     subscribe = 'subscribe',
@@ -95,6 +97,9 @@ export const wrapJoinCreationOperator = <T extends Array<any>, U>(
     metadata: JoinObservableMetadata
 ) => (...args: T) => {
     console.log('Wrapped join creation operator.');
+    metadata.observables.map(observable => console.log(`with base observable ${observable}`));
+    const message = createPayloadMessage(metadata, MessageType.joinObservable);
+    sendToBackpage(message);
     return fn(...args);
 };
 
