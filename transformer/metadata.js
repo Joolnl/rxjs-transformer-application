@@ -92,13 +92,12 @@ exports.createJoinObservableMetadataExpression = function (node, call, variableN
     ]);
 };
 // Traverse tree until observable is found.
-var getObservable = function (node, subscribe) {
-    if (subscribe === void 0) { subscribe = false; }
+var getObservable = function (node) {
     if (ts.isPropertyAccessExpression(node) || ts.isCallExpression(node)) {
-        return getObservable(node.expression, subscribe);
+        return getObservable(node.expression);
     }
     else if (ts.isIdentifier(node)) {
-        if (subscribe && ts.isPropertyAccessExpression(node.parent)) {
+        if (ts.isPropertyAccessExpression(node.parent)) {
             return namedObservables.get(node.getText());
         }
         return node;
@@ -177,7 +176,7 @@ var createArrayLiteralProperty = function (name, pipes) {
 // Create subscribe metadata object literal.
 exports.createSubscriberMetadataExpression = function (node) {
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
-    var observableMetadata = exports.extractMetadata(getObservable(node, true));
+    var observableMetadata = exports.extractMetadata(getObservable(node));
     var observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
     var pipes = createArrayLiteralProperty('pipes', getPipeArray(node));
     return ts.createObjectLiteral([

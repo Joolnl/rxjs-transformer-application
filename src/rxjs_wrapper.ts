@@ -127,7 +127,7 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 
 // Wrap and return pipe statement.
 export const wrapPipe = <T>(source$: Observable<T>, metadata: PipeMetadata, ...operators: OperatorFunction<T, any>[]) => {
-    // console.log(`wrapped pipe identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
+    console.log(`wrapped pipe line ${metadata.line} identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
     // console.log(operators);
     const message = createPayloadMessage(metadata, MessageType.pipe);
     sendToBackpage(message);

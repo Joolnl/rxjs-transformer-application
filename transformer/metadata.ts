@@ -161,11 +161,11 @@ export const createJoinObservableMetadataExpression = (
 };
 
 // Traverse tree until observable is found.
-const getObservable = (node: ts.Expression, subscribe = false): ts.Identifier => {
+const getObservable = (node: ts.Expression): ts.Identifier => {
     if (ts.isPropertyAccessExpression(node) || ts.isCallExpression(node)) {
-        return getObservable(node.expression, subscribe);
+        return getObservable(node.expression);
     } else if (ts.isIdentifier(node)) {
-        if (subscribe && ts.isPropertyAccessExpression(node.parent)) {
+        if (ts.isPropertyAccessExpression(node.parent)) {
             return namedObservables.get(node.getText());
         }
         return node;
@@ -269,7 +269,7 @@ const createArrayLiteralProperty = (name: string, pipes: Array<Pipe>): ts.Proper
 // Create subscribe metadata object literal.
 export const createSubscriberMetadataExpression = (node: ts.CallExpression): ts.ObjectLiteralExpression => {
     const { file, line } = extractMetadata(node);
-    const observableMetadata = extractMetadata(getObservable(node, true));
+    const observableMetadata = extractMetadata(getObservable(node));
     const observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
     const pipes = createArrayLiteralProperty('pipes', getPipeArray(node));
 
