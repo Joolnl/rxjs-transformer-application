@@ -26,6 +26,8 @@ export class CounterComponent implements AfterViewInit {
     const add = fromEvent(document.getElementById('addButton'), 'click');
     const substract = fromEvent(document.getElementById('minusButton'), 'click');
     const testIntervalAlfa = interval(1000);
+    const test = fromEvent(document.getElementById('addButton'), 'click');
+
 
     of(1).subscribe();
     of(2).pipe(map(() => 7)).subscribe();
@@ -39,6 +41,7 @@ export class CounterComponent implements AfterViewInit {
       tap(() => console.log('test'))
     );
 
+    merge(of(1), of(2)).subscribe(x =>  console.log(x));
     // const piped2 = piped.pipe(map(x => 1));
 
     // piped.subscribe(x => console.log(x));
@@ -51,6 +54,12 @@ export class CounterComponent implements AfterViewInit {
     //   scan((acc, curr) => acc += curr)        // accumulate values.
     // ).subscribe(i => this.counter = i);
 
+    const subscribeTest = of(1);
+
+    subscribeTest.pipe(map(() => 2)).subscribe();
+
+    test.pipe(tap(null)).subscribe();
+
     merge(add.pipe(
       tap(null),
       map(() => 1)
@@ -60,3 +69,4 @@ export class CounterComponent implements AfterViewInit {
   }
 
 }
+

@@ -1,14 +1,8 @@
 "use strict";
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 exports.__esModule = true;
 var ts = require("typescript");
 var v5 = require("uuid/v5");
+var namedObservables = new Map();
 var namedPipes = new Map();
 // Generate unique id from seed: filename, line and pos.
 var generateId = function (filename, line, pos) {
@@ -27,9 +21,71 @@ var createProperty = function (name, value) { return ts.createPropertyAssignment
 exports.createObservableMetadataExpression = function (node, variableName) {
     var _a = exports.extractMetadata(node), file = _a.file, line = _a.line, pos = _a.pos;
     var uuid = generateId(file, line, pos);
+    if (variableName !== 'anonymous') {
+        namedObservables.set(variableName, node);
+    }
     return ts.createObjectLiteral([
         createProperty('uuid', uuid),
         createProperty('type', node.getText()),
+        createProperty('identifier', variableName),
+        createProperty('file', file),
+        createProperty('line', line)
+    ]);
+};
+// Get the base observables from join observable.
+var getBaseObservables = function (node) {
+    if (node.arguments === undefined) {
+        return [];
+    }
+    // Recursively get observable names.
+    var getBaseObservable = function (argNode) {
+        if (ts.isPropertyAccessExpression(argNode) || ts.isCallExpression(argNode)) {
+            return getBaseObservable(argNode.expression);
+        }
+        else if (ts.isIdentifier) {
+            if (ts.isCallExpression(argNode.parent)) { // Anonymous observable.
+                var _a = exports.extractMetadata(argNode), file = _a.file, line = _a.line, pos = _a.pos;
+                var uuid = generateId(file, line, pos);
+                var type = argNode.getText();
+                return { uuid: uuid, type: type };
+            }
+            else {
+                var _b = exports.extractMetadata(namedObservables.get(argNode.getText())), file = _b.file, line = _b.line, pos = _b.pos;
+                var uuid = generateId(file, line, pos);
+                var name_1 = argNode.getText();
+                return { uuid: uuid, identifier: name_1, type: 'of' };
+            }
+        }
+    };
+    var observables = node.arguments
+        .map(function (arg) { return getBaseObservable(arg); })
+        .filter(function (arg) { return arg; });
+    return observables;
+};
+// Create array literal containing object literals from BaseObservable array.
+var createBaseObservableArrayLiteral = function (baseObservables) {
+    var createBaseObservableObjectLiteral = function (observable) {
+        return ts.createObjectLiteral([
+            createProperty('uuid', observable.uuid),
+            createProperty('identifier', observable.identifier),
+            createProperty('type', observable.type)
+        ]);
+    };
+    return ts.createArrayLiteral(baseObservables
+        .map(function (observable) { return createBaseObservableObjectLiteral(observable); }));
+};
+// Create metadata object literal from join observable.
+exports.createJoinObservableMetadataExpression = function (node, call, variableName) {
+    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line, pos = _a.pos;
+    var uuid = generateId(file, line, pos);
+    // const baseObservables = getBaseObservables(call)
+    //     .map(observable => ts.createStringLiteral(observable));
+    var baseObservables = createBaseObservableArrayLiteral(getBaseObservables(call));
+    return ts.createObjectLiteral([
+        createProperty('uuid', uuid),
+        createProperty('type', node.getText()),
+        // ts.createPropertyAssignment('observables', ts.createArrayLiteral(baseObservables)),
+        ts.createPropertyAssignment('observables', baseObservables),
         createProperty('identifier', variableName),
         createProperty('file', file),
         createProperty('line', line)
@@ -41,6 +97,9 @@ var getObservable = function (node) {
         return getObservable(node.expression);
     }
     else if (ts.isIdentifier(node)) {
+        if (ts.isPropertyAccessExpression(node.parent)) {
+            return namedObservables.get(node.getText());
+        }
         return node;
     }
     else {
@@ -94,12 +153,8 @@ var getPipeArray = function (node, pipes) {
     }
     return result;
 };
-// Create subscribe metadata object literal.
-exports.createSubscriberMetadataExpression = function (node) {
-    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
-    var observableMetadata = exports.extractMetadata(getObservable(node));
-    var observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
-    var pipes = getPipeArray(node);
+// Create Array Literal Property from given pipes with given attribute name.
+var createArrayLiteralProperty = function (name, pipes) {
     // Generate UUID for anonymous pipes.
     var anonymousPipes = pipes
         .filter(function (pipe) { return pipe.anonymous; })
@@ -112,9 +167,21 @@ exports.createSubscriberMetadataExpression = function (node) {
         .map(function (pipe) { return pipe.node; })
         .map(function (pipeNode) { return pipeNode.getText(); })
         .map(function (pipeName) { return namedPipes.get(pipeName); });
+    // Join arrays and filter null-type values.
+    var pipeLiterals = anonymousPipes.concat(nonAnonymousPipes)
+        .filter(function (pipe) { return pipe; })
+        .map(function (pipe) { return ts.createStringLiteral(pipe); });
+    return ts.createPropertyAssignment(name, ts.createArrayLiteral(pipeLiterals));
+};
+// Create subscribe metadata object literal.
+exports.createSubscriberMetadataExpression = function (node) {
+    var _a = exports.extractMetadata(node), file = _a.file, line = _a.line;
+    var observableMetadata = exports.extractMetadata(getObservable(node));
+    var observableUUID = generateId(observableMetadata.file, observableMetadata.line, observableMetadata.pos);
+    var pipes = createArrayLiteralProperty('pipes', getPipeArray(node));
     return ts.createObjectLiteral([
         createProperty('observable', observableUUID),
-        ts.createPropertyAssignment('pipes', ts.createArrayLiteral(__spreadArrays(anonymousPipes.concat(nonAnonymousPipes).map(function (pipe) { return ts.createStringLiteral(pipe); })))),
+        pipes,
         createProperty('function', 'testFn'),
         createProperty('file', file),
         createProperty('line', line)

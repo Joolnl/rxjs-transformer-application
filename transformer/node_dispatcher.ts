@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { createWrapCreationExpression, wrapSubscribeMethod, wrapPipeStatement } from './operator_wrapper';
+import { createWrapCreationExpression, createWrapJoinCreationExpression, wrapSubscribeMethod, wrapPipeStatement } from './operator_wrapper';
 
 const rxjsCreationOperators = ['ajax', 'bindCallback', 'bindNodeCallback', 'defer', 'empty', 'from', 'fromEvent',
     'fromEventPattern', 'generate', 'interval', 'of', 'range', 'throwError', 'timer', 'iif'];
@@ -12,7 +12,15 @@ type NodeType = 'UNCLASSIFIED' | 'RXJS_CREATION_OPERATOR' | 'RXJS_JOIN_CREATION_
 const isRxJSCreationOperator = (node: ts.Node): boolean => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
         return rxjsCreationOperators
-            .concat(rxjsJoinCreationOperators)
+            .some(operator => operator === node.expression.getText());
+    }
+    return false;
+};
+
+// Determine if given node is RxJS Join Creation Operator Statement.
+const isRxJSJoinCreationOperator = (node: ts.Node): boolean => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.getSourceFile() !== undefined) {
+        return rxjsJoinCreationOperators
             .some(operator => operator === node.expression.getText());
     }
     return false;
@@ -53,6 +61,8 @@ const classify = (node: ts.Node): NodeType => {
 
     if (isRxJSCreationOperator(node)) {
         classification = 'RXJS_CREATION_OPERATOR';
+    } else if (isRxJSJoinCreationOperator(node)) {
+        classification = 'RXJS_JOIN_CREATION_OPERATOR';
     } else if (isPipePropertyAccessExpr(node)) {
         classification = 'RXJS_PIPE';
     } else if (isSubscribeStatement(node)) {
@@ -72,6 +82,9 @@ export const dispatchNode = (node: ts.Node): [ts.Node, string | null] => {
         case 'RXJS_CREATION_OPERATOR':
             node = createWrapCreationExpression(node as ts.CallExpression);
             return [node, 'wrapCreationOperator'];
+        case 'RXJS_JOIN_CREATION_OPERATOR':
+            node = createWrapJoinCreationExpression(node as ts.CallExpression);
+            return [node, 'wrapJoinCreationOperator'];
         case 'RXJS_PIPE':
             node = wrapPipeStatement(node as ts.CallExpression);
             return [node, 'wrapPipe'];

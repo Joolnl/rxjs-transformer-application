@@ -1,6 +1,8 @@
 import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata } from '../transformer/metadata';
+import {
+    PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata, JoinObservableMetadata
+} from '../transformer/metadata';
 import { pipeFromArray } from 'rxjs/internal/util/pipe';
 declare var chrome;
 
@@ -29,10 +31,12 @@ interface SubscribeEvent<T> {
     observable: string;
 }
 
-type Payload<T> = PipeMetadata | PipeableOperatorMetadata | ObservableMetadata | SubscriberMetadata | Event<T> | SubscribeEvent<T>;
+type Payload<T> = PipeMetadata | PipeableOperatorMetadata | ObservableMetadata | JoinObservableMetadata
+    | SubscriberMetadata | Event<T> | SubscribeEvent<T>;
 
 enum MessageType {
     observable = 'observable',
+    joinObservable = 'joinObservable',
     pipe = 'pipe',
     operator = 'operator',
     subscribe = 'subscribe',
@@ -87,6 +91,18 @@ export const wrapCreationOperator = <T extends Array<any>, U>(fn: (...args: T) =
     return fn(...args);
 };
 
+// Wrap join creation operator and return it, send data to backpage.
+export const wrapJoinCreationOperator = <T extends Array<any>, U>(
+    fn: (...args: T) => U,
+    metadata: JoinObservableMetadata
+) => (...args: T) => {
+    console.log(`Wrapped join creation operator. ${metadata.identifier} ${metadata.line}`);
+    metadata.observables.map(observable => console.log(`with base observable ${observable}`));
+    const message = createPayloadMessage(metadata, MessageType.joinObservable);
+    sendToBackpage(message);
+    return fn(...args);
+};
+
 // Take source, pipe it, box event with new id, tap box, unpack box and pass along value.
 export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>, last: boolean, metadata: PipeableOperatorMetadata) => {
     return (source$: Observable<T>) => {
@@ -111,7 +127,7 @@ export const wrapPipeableOperator = <T>(operatorFn: MonoTypeOperatorFunction<T>,
 
 // Wrap and return pipe statement.
 export const wrapPipe = <T>(source$: Observable<T>, metadata: PipeMetadata, ...operators: OperatorFunction<T, any>[]) => {
-    // console.log(`wrapped pipe identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
+    console.log(`wrapped pipe line ${metadata.line} identifier: ${metadata.identifier}  observable: ${metadata.observable} uuid: ${metadata.uuid}`);
     // console.log(operators);
     const message = createPayloadMessage(metadata, MessageType.pipe);
     sendToBackpage(message);

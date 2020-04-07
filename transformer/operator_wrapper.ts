@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import {
   createPipeableOperatorMetadataExpression, createObservableMetadataExpression,
-  createSubscriberMetadataExpression, createPipeMetadataExpression
+  createSubscriberMetadataExpression, createPipeMetadataExpression, createJoinObservableMetadataExpression
 } from './metadata';
 import * as uuid from 'uuid/v4';
 
@@ -23,6 +23,18 @@ export const createWrapCreationExpression = (node: ts.CallExpression): ts.CallEx
     : 'anonymous';
   const metaDataExpression = createObservableMetadataExpression(identifier, variableName);
   const curriedCall = createWrappedCallExpression('wrapCreationOperator', identifier.getText(), [metaDataExpression]);
+  const completeCall = ts.createCall(curriedCall, undefined, node.arguments);
+  return completeCall;
+};
+
+// Create wrapped RxJS join creation operator expression.
+export const createWrapJoinCreationExpression = (node: ts.CallExpression): ts.CallExpression => {
+  const identifier: ts.Identifier = node.expression as ts.Identifier;
+  const variableName = ts.isVariableDeclaration(node.parent)
+    ? node.parent.name.getText()
+    : 'anonymous';
+  const metaDataExpression = createJoinObservableMetadataExpression(identifier, node, variableName);
+  const curriedCall = createWrappedCallExpression('wrapJoinCreationOperator', identifier.getText(), [metaDataExpression]);
   const completeCall = ts.createCall(curriedCall, undefined, node.arguments);
   return completeCall;
 };
@@ -67,7 +79,7 @@ export const wrapPipeStatement = (node: ts.CallExpression): ts.CallExpression =>
 export const wrapSubscribeMethod = (node: ts.CallExpression): ts.CallExpression => {
   const args = node.arguments.map(arg => arg);  // ts.NodeArray => array.
   const propertyAccessExpr = node.expression as ts.PropertyAccessExpression;
-  const source$ = propertyAccessExpr.expression;
+  const source$: ts.Identifier = propertyAccessExpr.expression as ts.Identifier;
   const metadata = createSubscriberMetadataExpression(node);
 
   return ts.createCall(ts.createIdentifier('wrapSubscribe'), undefined, [source$, metadata, ...args]);
