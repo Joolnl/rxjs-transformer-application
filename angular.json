@@ -17,7 +17,7 @@
         "build": {
           "builder": "ngx-build-plus:browser",
           "options": {
-            "plugin": "~./ng-ts-register-transformer.js",
+            "plugin": "rxjs-transformer",
             "outputPath": "dist/transpilation-test-three",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -68,7 +68,7 @@
         "serve": {
           "builder": "ngx-build-plus:dev-server",
           "options": {
-            "plugin": "~./ng-ts-register-transformer.js",
+            "plugin": "rxjs-transformer",
             "browserTarget": "transpilation-test-three:build"
           },
           "configurations": {

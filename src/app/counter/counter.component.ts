@@ -42,6 +42,7 @@ export class CounterComponent implements AfterViewInit {
     );
 
     merge(of(1), of(2)).subscribe(x =>  console.log(x));
+    merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));merge(of(1), of(2)).subscribe(x =>  console.log(x));
     // const piped2 = piped.pipe(map(x => 1));
 
     // piped.subscribe(x => console.log(x));
