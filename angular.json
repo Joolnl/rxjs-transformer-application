@@ -15,7 +15,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "ngx-build-plus:browser",
+          "builder": "rxjs-transformer/dist/ng-ts-register-transformer",
           "options": {
             "plugin": "~./ng-ts-register-transformer.js",
             "outputPath": "dist/transpilation-test-three",
@@ -68,7 +68,7 @@
         "serve": {
           "builder": "ngx-build-plus:dev-server",
           "options": {
-            "plugin": "~./ng-ts-register-transformer.js",
+            "plugin": "rxjs-transformer/dist/ng-ts-register-transformer",
             "browserTarget": "transpilation-test-three:build"
           },
           "configurations": {
