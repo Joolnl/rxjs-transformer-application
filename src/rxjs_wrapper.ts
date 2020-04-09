@@ -2,7 +2,7 @@ import { Observable, MonoTypeOperatorFunction, Subscription, OperatorFunction } 
 import { map, tap } from 'rxjs/operators';
 import {
     PipeableOperatorMetadata, ObservableMetadata, PipeMetadata, SubscriberMetadata, JoinObservableMetadata
-} from '../transformer/metadata';
+} from 'rxjs-transformer/metadata';
 import { pipeFromArray } from 'rxjs/internal/util/pipe';
 declare var chrome;
 
